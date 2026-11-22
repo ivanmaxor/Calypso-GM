@@ -2985,6 +2985,7 @@ func _tests() -> void:
 	_tests_partida()
 	_tests_datos()
 	_tests_combate()
+	_tests_mejoras_visibles()
 	_tests_pausa_equipo()
 	_tests_desafios_silueta()
 	_tests_xp_tras_desync()
@@ -3605,6 +3606,38 @@ func _tests_combate() -> void:
 			_ok(ca.tipo != "cura2", "la Sopaipilla no sale sin Desync")
 	c.queue_free()
 	Partida.nuevo()
+
+
+
+## M13: antes de pagar se muestra qué sube, con el mismo signo que la ficha, y los números llevan un decimal.
+func _tests_mejoras_visibles() -> void:
+	var HE = load("res://pantallas/hangar_equipo.gd")
+	for id in Datos.ITEMS:
+		for rareza in [0, 3]:
+			var it := {"id": id, "rareza": rareza, "nivel": 1, "uid": -1}
+			while it.nivel < Partida.nivel_max(it):
+				var gana: String = HE.texto_mejora(it)
+				_ok(gana.begins_with("Al mejorar: +") or gana.begins_with("Al mejorar: -"), "se ve qué gana %s antes de pagar: %s" % [id, gana])
+				# el signo de lo que se gana es el mismo que el de la base de la pieza
+				for k in Datos.ITEMS[id].base:
+					var nom: String = PiezaBoton.sin_spoiler(Datos.NOMBRE_STAT.get(k, k))
+					var signo := "-" if Datos.ITEMS[id].base[k] < 0 else "+"
+					if gana.contains(" " + nom):
+						_ok(gana.contains(signo) , "el signo de %s calza con la ficha en %s" % [k, id])
+				it.nivel += 1
+			_ok(HE.texto_mejora(it) == "", "al máximo no ofrece mejora: " + id)
+	var turbo := {"id": "motor_turbo", "rareza": 0, "nivel": 1, "uid": -1}
+	_ok(HE.texto_mejora(turbo).begins_with("Al mejorar: -"), "la recarga de esquiva baja al mejorar: " + HE.texto_mejora(turbo))
+	_ok(PiezaBoton.valor_stat("atk", 2.16) == "+2,2", "un decimal con coma: " + PiezaBoton.valor_stat("atk", 2.16))
+	_ok(PiezaBoton.valor_stat("atk", 3.0) == "+3", "sin ,0 que no aporta")
+	_ok(PiezaBoton.valor_stat("crit", 0.045) == "+4,5 %", "porcentaje con decimal: " + PiezaBoton.valor_stat("crit", 0.045))
+
+
+func _textos_stats(st: Dictionary) -> String:
+	var r := ""
+	for k in st:
+		r += k + PiezaBoton.valor_stat(k, st[k]) + ";"
+	return r
 
 
 

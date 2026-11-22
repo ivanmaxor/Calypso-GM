@@ -1002,9 +1002,13 @@ func _sumar(s: Dictionary, mods: Dictionary, factor := 1.0) -> void:
 		s[k] = s.get(k, 0) + mods[k] * factor
 
 
+## Cuánto sube cada nivel de mejora, sobre la base de la pieza.
+const MEJORA_POR_NIVEL := 0.04
+
+
 func stats_item(it: Dictionary) -> Dictionary:
 	var r := {}
-	var f: float = Datos.RAREZAS[it.rareza].mult * (1.0 + 0.04 * (it.nivel - 1))
+	var f: float = Datos.RAREZAS[it.rareza].mult * (1.0 + MEJORA_POR_NIVEL * (it.nivel - 1))
 	_sumar(r, def_de(it).base, f)
 	return r
 

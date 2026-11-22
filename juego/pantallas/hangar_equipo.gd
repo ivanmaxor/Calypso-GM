@@ -280,6 +280,12 @@ func _dibujar_info() -> void:
 				var txt := "(%s)" % _dif(k, dif)
 				UI.t(c, 158, y, txt, UI.C_VERDE if dif > 0 else UI.C_ROJO)
 		y += 13
+	# qué ganas con la próxima mejora, antes de pagar (M13)
+	var gana := texto_mejora(it)
+	if gana != "":
+		for lin in UI.partir(gana, 224):
+			UI.t(c, 6, y, lin, UI.C_ORO)
+			y += 13
 	y += 3
 	UI.t(c, 6, y, "Al fusionarla, va ganando:" if Partida.tiene("fusion") else "Con más rareza, va ganando:", UI.C_GRIS)
 	y += 13
@@ -296,8 +302,25 @@ func _dibujar_info() -> void:
 
 
 func _dif(k: String, v: float) -> String:
-	var s := "+" if v > 0 else "-"
-	var a := absf(v)
-	if k in PiezaBoton.PORCENTAJES:
-		return "%s%d %%" % [s, int(round(a * 100.0))]
-	return "%s%d" % [s, int(round(a))]
+	return PiezaBoton.valor_stat(k, v)
+
+
+## "Al mejorar: +0,2 Ataque": lo que sube el próximo nivel. Vacío si ya está al máximo.
+static func texto_mejora(it: Dictionary) -> String:
+	if it.is_empty() or it.nivel >= Partida.nivel_max(it):
+		return ""
+	var sig := it.duplicate()
+	sig.nivel += 1
+	var ahora := Partida.stats_item(it)
+	var luego := Partida.stats_item(sig)
+	var partes := PackedStringArray()
+	for k in luego:
+		# con el mismo signo que la ficha: la recarga de esquiva baja, así que se ve "-0,2 %"
+		var dif: float = luego[k] - ahora.get(k, 0.0)
+		var txt := PiezaBoton.valor_stat(k, dif)
+		if txt.trim_prefix("+").trim_prefix("-").trim_suffix(" %") == "0":
+			continue
+		partes.append("%s %s" % [txt, PiezaBoton.sin_spoiler(Datos.NOMBRE_STAT.get(k, k))])
+	if partes.is_empty():
+		return ""
+	return "Al mejorar: " + ", ".join(partes)
