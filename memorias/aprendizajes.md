@@ -43,7 +43,7 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
 - **Bots:**
   - bueno (ve todas las balas);
   - `--torpe` (reacciona lento y se equivoca);
-  - `--ciego` (nunca esquiva). **Si gana, el juego no amenaza**;
+  - `--ciego` (nunca esquiva). **Si gana, el juego no amenaza.** Ojo: persigue enemigos sin esquivarlos y muere chocando en 15-30 s, incluso en Fácil, así que no sirve para comparar dificultades;
   - `--quieto` (no se mueve). Debe perder siempre, porque comprueba el anti-AFK.
 - **Argumentos útiles:**
   - para elegir qué se prueba: `--nivel=`, `--hasta=`, `--generar=` (equipo acorde a ese punto), `--dificultad=`, `--armas=a,b`, `--habs=a,b`, `--evo`;
@@ -82,6 +82,7 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
   - Se ganaba botín entrando y saliendo de un nivel: ahora retirarse no da nada. En el Mundo 1 no caen legendarios ni míticos.
   - La Camper mataba al jefe final en 6 s estando quieta: de ahí salieron el AFK y el tope a jefes.
   - Más enemigos con menos disparos cada uno se siente mejor que pocos enemigos que disparan mucho.
+- **La dificultad no llegaba al director de oleadas** (hasta #42): Difícil solo subía la vida y el daño, así que traía los mismos enemigos que Normal y casi las mismas balas. Además, con el jefe en pantalla había *menos* balas en Difícil, porque sus balas, más rápidas, salían antes de la pantalla. Subir vida y daño no pone más cosas en pantalla: la presión se mide con enemigos y balas en pantalla (#33).
 - **Meta de daño por segundo de un arma** (Ataque 12, contra un blanco): 35-45 en nivel 1, 90-120 en nivel 5 y 150-220 evolucionada. Las de área o defensa, menos contra un blanco. Se mide con `--tests --medir_armas`.
 - **Mejoras de piezas:** cada nivel suma solo un 4 % de la base de la pieza, y la pantalla redondea a entero. Por eso parece que "no sube" (M13).
 

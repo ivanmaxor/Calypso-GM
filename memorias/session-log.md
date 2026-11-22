@@ -24,7 +24,9 @@ La más reciente arriba. Cada entrada: fecha, **quién**, qué se hizo, archivos
   | #40 | M13 | Balance: mejora de piezas de 4 % a 8 % por nivel. Apilado sobre #30, retroactivo, a decidir por Iván |
   | #31 | M16, M17 | La pausa muestra armas, habilidades y estrellas del nivel |
   | #32 | M14 | Tras el Desync, las cartas esperan a que lleguen los Bits de la cascada y destella "¡NIVEL N!" |
-  | #33 | M10 | El bot mide enemigos y balas en pantalla |
+  | #33 | M10 | El bot mide enemigos y balas en pantalla (código de pruebas) |
+  | #42 | M10, M12 | Difícil con más enemigos y balas desde el inicio, y jefes que atacan más seguido. Nuevas perillas por dificultad (`ritmo`, `inicio`, `ganas`, `salva`, `jefe_cd`); vida y daño de Difícil bajan un poco |
+  | #43 | M11 | El Reportado (`rayo`) pierde fuerza en cada salto; la Macro queda igual, porque está dentro de la meta |
   | #34 | M05 | Borrador: 4 opciones de letra en hojas de comparación, para que elijan las personas |
   | #35 | M04 | Ruleta centrada en un círculo más grande |
   | #36 | M01 | Hitbox discreta jugando normal y entera en foco o Desync |
@@ -49,7 +51,8 @@ La más reciente arriba. Cada entrada: fecha, **quién**, qué se hizo, archivos
 
 **Commits** (punta de cada rama al cerrar la sesión)
 - #25 `59f2475`, #26 `c2c2a97`, #27 `afd8c83`, #28 `54657bd`, #29 `0af0e9b`, #30 `773350c`, #31 `ebe3e1c`, #32 `9ab21fd`;
-- #33 `f7edbbb`, #34 `fff0f21`, #35 `464bba4`, #36 `48bf39c`, #37 `a46f01a`, #38 `e67a784`, #39 `d2e7a23`, #40 `8a6edc2`.
+- #33 `f7edbbb`, #34 `fff0f21`, #35 `464bba4`, #36 `48bf39c`, #37 `a46f01a`, #38 `e67a784`, #39 `d2e7a23`, #40 `8a6edc2`;
+- #42 `4a21567`, #43 `39413cb`.
 
 **Verificado**
 - Cada PR con `import`, `tests`, `flujo` y `flujo_hangar` en verde, y capturas mirando el cambio.
@@ -57,6 +60,10 @@ La más reciente arriba. Cada entrada: fecha, **quién**, qué se hizo, archivos
 - `campana` completa:
   - en #32: 24 de 24 estrellas;
   - en #40: 23 de 24.
+- **Balance (#42, #43) con 10 partidas o más por caso, antes y después.** En Difícil:
+  - 1-6 pasa de 8,7 a 12,9 balas en pantalla (Normal: 6,0);
+  - el Compactador gana 13 de 20, y el jugador recibe entre 1,5 y 2,5 golpes en la pelea;
+  - con la misma semilla, Normal da exactamente lo mismo que antes.
 
 **Sin verificar**
 - **Nada se jugó con personas.** Cómo se sienten M14 y M01, la letra (M05) y el balance lo tienen que decir dos personas jugando, Difícil incluido.
@@ -70,10 +77,11 @@ La más reciente arriba. Cada entrada: fecha, **quién**, qué se hizo, archivos
   - Los que agregan pruebas chocan en `_tests()` de `pruebas.gd`, pero es trivial: se conservan ambas líneas.
 - Decisiones de Iván:
   - el 8 % de #40;
+  - las perillas de Difícil de #42;
   - la letra de #34;
   - los puntos marcados "a decidir" en #36, #37, #38 y #39;
   - I01 e I02.
-- Balance M10 a M12 con su tabla antes/después, en curso.
+- Balance: medir juntos #40 (piezas al 8 %), #42 y #43, porque se midieron por separado sobre `main`. No se corrió la campaña completa en las 3 dificultades.
 - **R01 a R03** (partir `pruebas.gd`, `combate.gd` y `arsenal.gd`): después de fusionar, porque chocan con casi todos los PR abiertos.
 - Con #35 y #39 juntos, el cartel de la Ruleta tapa su "¡NUEVO!" si se enfoca durante el parpadeo.
 
