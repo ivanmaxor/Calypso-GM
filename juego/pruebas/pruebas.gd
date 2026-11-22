@@ -3588,6 +3588,15 @@ func _tests_desync_visual() -> void:
 	_ok(e.cola_vis == 30, "el número que se ve cuenta todas las balas (%d)" % e.cola_vis)
 	var dano: float = e.cola_dano
 	_ok(e.cola_hits == c.cola_total, "el daño en cola solo viene de las balas que pegaron")
+	# una misma bala que se queda varios cuadros sobre el sentenciado suma una sola vez
+	var vis_antes: int = e.cola_vis
+	c.tiros.clear()
+	c.crear_tiro(200.0, 180.0, -PI / 2.0, 0.0, e.hpmax, Datos.tex("tiro2"), 1, false)
+	for k in 5:
+		c._colisiones()
+		c.ticks += 1
+	_ok(e.cola_vis == vis_antes + 1, "una bala quieta sobre el sentenciado suma una vez (%d)" % (e.cola_vis - vis_antes))
+	c.tiros.clear()
 	c.cola_i = 0
 	c.cascada_t = 0.0
 	c.estado = "cascada"
