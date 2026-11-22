@@ -183,13 +183,16 @@ según la rareza (`r`: 2 Poco común, 3 Raro, 4 Épico, 5 Legendario).
 
 Multiplicadores sobre Normal: `hp` y `dano` de los enemigos, `vel` de sus balas, `disparo` = tiempo entre disparos
 (menos es más seguido), `botin` y `chatarra`.
+Presión: `ritmo` multiplica los enemigos por segundo del director, `inicio` sube además el comienzo,
+`ganas` es cuánto disparan los Bots al empezar el nivel, `salva` = tiempo entre salvas y `jefe cd` = tiempo
+entre ataques de los jefes (menos es más seguido).
 
-| id | Nombre | hp | daño | vel | disparo | botín | chatarra | Notas |
-|---|---|---|---|---|---|---|---|---|
-| `facil` | Fácil | 0,8 | 0,7 | 0,9 | 1,25 | 0,85 | 1 |  |
-| `normal` | Normal | 1 | 1 | 1 | 1 | 1 | 1 |  |
-| `dificil` | Difícil | 1,25 | 1,3 | 1,1 | 0,85 | 1,2 | 1,2 |  |
-| `extremo` | Extremo | 1,6 | 1,6 | 1,2 | 0,7 | 1,5 | 1,5 | sin pizzas, requiere terminar |
+| id | Nombre | hp | daño | vel | disparo | botín | chatarra | ritmo | inicio | ganas | salva | jefe cd | Notas |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `facil` | Fácil | 0,8 | 0,7 | 0,9 | 1,25 | 0,85 | 1 | 1 | 1 | 0,35 | 1 | 1 |  |
+| `normal` | Normal | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 0,35 | 1 | 1 |  |
+| `dificil` | Difícil | 1,15 | 1,2 | 1,1 | 0,9 | 1,2 | 1,2 | 1,4 | 1,3 | 0,7 | 0,75 | 0,85 |  |
+| `extremo` | Extremo | 1,45 | 1,5 | 1,2 | 0,8 | 1,5 | 1,5 | 1,6 | 1,4 | 0,85 | 0,65 | 0,75 | sin pizzas, requiere terminar |
 
 ## Desafíos
 
