@@ -34,7 +34,7 @@ Todos se usan como `python herramientas/arte/<script> juego [filtro]`. El filtro
 |---|---|
 | `modelos.py` + `generar_sprites.py` | Enemigos originales, explosiones, fondos de combate, cofres. Las mascotas ya **no** salen de aquí |
 | `generar_v2.py` | Naves (48×48, 10 cuadros), iconos de las armas, habilidades y piezas originales, objetos, retratos y planetas |
-| `generar_mapa.py` | El mapa del Mundo 1 (1040×360, con tramado Bayer). Dibuja el camino por `Datos.NODOS`: si cambian los nodos, se regenera |
+| `generar_mapa.py` | El mapa del Mundo 1 (1040×360, con tramado Bayer). Lee `Datos.NODOS` y `Datos.PORTAL` desde `datos.gd` y dibuja el camino por ahí: si cambian los nodos, se regenera. Al final revisa que ninguna utilería quede bajo un nodo, su premio, sus estrellas, la nave estacionada o la franja de los planetas, y falla si algo choca |
 | `generar_v3_iconos.py` | Iconos nuevos, proyectiles y objetos de combate, la Mosca y todas las mascotas. `--revisar` comprueba nombres, tamaños y transparencia |
 | `generar_v3_escenas.py` | Don Tuerca de medio cuerpo, el Hangar (fondo + 6 estaciones + los `hangar_delante_*`) y `bala_pellet`. **Escribe las posiciones del Hangar en `juego/nucleo/sala_hangar.gd`**. Con `--montajes=<carpeta>` arma maquetas como se ven en el juego |
 | `hoja_v2.py`, `vista_previa.py` | Hojas de revisión ampliadas |
@@ -66,7 +66,7 @@ Sobre el tiempo: `generar_v3_iconos.py` tarda unos 3 minutos y `generar_v3_escen
 | Balas enemigas | Rojas, rosadas o naranjas. **Rojas en todos los niveles** |
 | Tus balas | Cian |
 | XP (Bits) | Dorados, en rombo |
-| Hitbox del jugador | Punto rosado `#ff6fb5` del tamaño real de lo que te puede pegar, con centro blanco |
+| Hitbox del jugador | Siempre del tamaño real de lo que te puede pegar. Jugando normal, solo un aro rosado `#ff6fb5` fino y semitransparente con un centro blanco chico, para que no parezca una bala pegada a la nave (M01). En foco o Desync, el punto rosado entero con centro blanco |
 
 En la v0.2, dos jugadores confundieron la XP con balas en el 1-1, porque ahí las balas tenían otro color. Por eso desde la v0.3 son rojas siempre.
 

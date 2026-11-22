@@ -18,6 +18,10 @@ const VIDA_GIRO := 110  # una bala que persigue no vive más que esto
 const HITBOX := 3.5
 const IFRAMES_GOLPE := 70
 const IFRAMES_ESCUDO_DESYNC := 45
+## Después de la cascada, las cartas esperan a que la XP llegue a la nave (como máximo esto, en cuadros)
+## y, al subir de nivel, un respiro con la barra destellando antes de elegir (M14). Solo cambia el ritmo.
+const TRAS_DESYNC := 120
+const RESPIRO_NIVEL := 30
 const TIERS_CADENA := [10, 25, 50, 100, 200]
 const MULT_CADENA := [1.0, 1.1, 1.2, 1.35, 1.5, 1.75]
 const CADENA_LARGA := 120.0  # con esta cadena la ventana ya está en su mínimo
@@ -89,6 +93,8 @@ class Enemigo:
 	var cd3 := 200.0
 	var muerto := false
 	var cola_hits := 0
+	## Solo para mostrar: cuenta también las balas que pasan de largo cuando ya está sentenciado (M15).
+	var cola_vis := 0
 	var cola_dano := 0.0
 	var fase := 0
 	var inv := 0.0
@@ -146,6 +152,8 @@ class Tiro:
 	var rot := 0.0
 	var rotar := false
 	var golpeados := {}
+	## Enemigos sentenciados que esta bala ya cruzó en el Desync: solo suman al contador visible.
+	var vistos := {}
 	var obj = null
 
 
@@ -157,6 +165,8 @@ class Gema:
 	var valor := 1
 	var tipo := "bit"
 	var imantada := false
+	## Bit que soltó la cascada: las cartas lo esperan antes de salir (M14).
+	var de_cascada := false
 	var t := 0
 
 
@@ -275,6 +285,8 @@ var nivel_carta := 1
 var xp := 0.0
 var xp_sig := XP_BASE + XP_PASO
 var niveles_pendientes := 0
+var tras_desync_t := 0
+var nivel_flash := 0
 var habs := {}
 var cartas := []
 var carta_sel := 0
@@ -472,8 +484,7 @@ func _physics_process(_d: float) -> void:
 				_tick_cadena()
 				_tick_pistas()
 				_tick_botin()
-				if niveles_pendientes > 0 and estado == "jugando":
-					_abrir_cartas()
+				_revisar_cartas()
 		"desync":
 			_leer_pausa()
 			if estado != "pausa":
@@ -592,6 +603,18 @@ func mult_dano_jugador() -> float:
 
 func hitbox() -> float:
 	return HITBOX * maxf(stats.hitbox_mult, 0.4)
+
+
+## El indicador de la hitbox se ve entero al ir en foco o mientras dura el efecto del Desync (incluida la
+## reconexión y la cascada). Jugando normal queda discreto (M01).
+func hitbox_destacada() -> bool:
+	return foco or estado in ["desync", "reconectando", "cascada"]
+
+
+## Radio del centro del indicador discreto: escala con la hitbox, para que el aro se siga viendo aunque
+## una habilidad la achique.
+func centro_hitbox_discreta() -> float:
+	return minf(1.5, hitbox() * 0.45)
 
 
 func _tick_jugador() -> void:
@@ -1053,6 +1076,7 @@ func _tick_cascada() -> void:
 		dmg = minf(dmg, e.hpmax * 0.35)
 	var hits := e.cola_hits
 	e.cola_hits = 0
+	e.cola_vis = 0
 	e.cola_dano = 0.0
 	var nota: int = ESCALA[mini(cascada_nota, ESCALA.size() - 1)]
 	cascada_nota += 1
@@ -1072,6 +1096,7 @@ func _terminar_cascada() -> void:
 	_limpiar_todo()
 	for g in gemas:
 		g.imantada = true
+		g.de_cascada = g.tipo == "bit"
 	if stats.cura_cascada > 0:
 		curar(stats.cura_cascada)
 		texto(jx, jy - 26, "+%d" % int(stats.cura_cascada), UI.C_VERDE, 1)
@@ -1096,6 +1121,8 @@ func _terminar_cascada() -> void:
 	cascadas.append([cola_total, cascada_kills])
 	cola.clear()
 	cola_total = 0
+	# si la cascada cierra el nivel, no hay cartas que esperar
+	tras_desync_t = 0 if victoria_pendiente else TRAS_DESYNC
 	estado = "victoria" if victoria_pendiente else "jugando"
 	if victoria_pendiente:
 		estado_t = 170.0
@@ -1258,6 +1285,10 @@ func _recoger(g: Gema) -> void:
 				nivel_carta += 1
 				xp_sig = XP_BASE + nivel_carta * XP_PASO
 				niveles_pendientes += 1
+				nivel_flash = RESPIRO_NIVEL
+				# el respiro se cumple entero aunque el nivel suba al final de la espera
+				if tras_desync_t > 0:
+					tras_desync_t = maxi(tras_desync_t, RESPIRO_NIVEL)
 
 
 func _cartel(s: String, c: Color) -> void:
@@ -1854,6 +1885,11 @@ func _colisiones() -> void:
 				continue
 			# en Desync, el que ya está sentenciado no ataja más balas: pasan al siguiente
 			if en_desync and not e.jefe and e.cola_dano * bono >= e.hp:
+				# igual se cuenta en el número que se ve, para que suba entero (no cambia el daño)
+				if not t.vistos.has(e.id):
+					t.vistos[e.id] = true
+					e.cola_vis += 1
+					e.flash = 2
 				continue
 			t.golpeados[e.id] = ticks + t.rehit if t.rehit > 0 else 2147483647
 			golpear(e, t.dmg, t.crit, t.x, t.y)
@@ -1970,6 +2006,7 @@ func golpear(e: Enemigo, dmg: float, crit: bool, x: float, y: float) -> void:
 		if e.cola_hits == 0:
 			cola.append(e)
 		e.cola_hits += 1
+		e.cola_vis += 1
 		e.cola_dano += dmg * e.mult_dano
 		cola_total += 1
 		e.flash = 2
@@ -2460,7 +2497,26 @@ func _frase_ruleta(cuenta: Dictionary, tres: bool) -> String:
 # =========================================================================================
 # CARTAS: ranuras limitadas y sinergias
 # =========================================================================================
+## Abre las cartas si hay niveles pendientes. Tras un Desync, primero deja ver la XP llegando a la nave
+## y la barra subiendo; recién después del respiro del nivel, la elección (M14).
+func _revisar_cartas() -> void:
+	if nivel_flash > 0:
+		nivel_flash -= 1
+	if tras_desync_t > 0:
+		tras_desync_t -= 1
+		var en_camino := false
+		for g in gemas:
+			if g.de_cascada:
+				en_camino = true
+				break
+		if not en_camino and nivel_flash <= 0:
+			tras_desync_t = 0
+	if niveles_pendientes > 0 and estado == "jugando" and tras_desync_t <= 0:
+		_abrir_cartas()
+
+
 func _abrir_cartas() -> void:
+	nivel_flash = 0
 	niveles_pendientes -= 1
 	cartas = _generar_cartas()
 	carta_sel = 1
@@ -2958,12 +3014,19 @@ func dibujar_frente(c: CanvasItem) -> void:
 	if vivo and fogonazo > 1:
 		c.draw_rect(Rect2(round(jx) - 2, round(jy) - 20, 4, 4), Color(1, 1, 0.8))
 	if vivo:
-		# el punto debil siempre se ve, y es del tamaño real de lo que te puede pegar
+		# el punto debil siempre se ve, del tamaño real de lo que te puede pegar. Entero en foco o Desync;
+		# jugando normal, solo el contorno y el centro, para que no parezca una bala pegada a la nave (M01)
 		var pos := Vector2(round(jx), round(jy))
 		var hb := hitbox()
-		c.draw_circle(pos, hb + 1.0, Color("0d0a18"))
-		c.draw_circle(pos, hb, Color("ff6fb5"))
-		c.draw_circle(pos, maxf(hb * 0.4, 1.0), Color.WHITE)
+		if hitbox_destacada():
+			c.draw_circle(pos, hb + 1.0, Color("0d0a18"))
+			c.draw_circle(pos, hb, Color("ff6fb5"))
+			c.draw_circle(pos, maxf(hb * 0.4, 1.0), Color.WHITE)
+		else:
+			c.draw_arc(pos, hb, 0.0, TAU, 16, Color(Color("ff6fb5"), 0.7), 1.0)
+			var rc := centro_hitbox_discreta()
+			c.draw_circle(pos, rc, Color("0d0a18"))
+			c.draw_circle(pos, rc * 0.66, Color.WHITE)
 		if foco:
 			var n := 16
 			for k in n:
@@ -2991,7 +3054,7 @@ func dibujar_frente(c: CanvasItem) -> void:
 		for e in cola:
 			if e.muerto or e.cola_hits <= 0:
 				continue
-			var lbl := "X%d" % e.cola_hits
+			var lbl := "X%d" % maxi(e.cola_vis, e.cola_hits)
 			var an := UI.ancho(lbl)
 			var yy: float = e.y - e.def.h / 2.0 - 12.0
 			# en dorado, los que ya están sentenciados
@@ -3197,10 +3260,10 @@ func dibujar_hud(c: CanvasItem) -> void:
 	c.draw_rect(rv, Color("0d0a18"))
 	c.draw_rect(Rect2(rv.position + Vector2.ONE, Vector2((rv.size.x - 2) * clampf(hp_visto / stats.hp, 0.0, 1.0), rv.size.y - 2)), Color.WHITE)
 	c.draw_rect(Rect2(rv.position + Vector2.ONE, Vector2((rv.size.x - 2) * frac, rv.size.y - 2)), col_hp if hp_flash % 2 == 0 else UI.C_ROJO)
-	UI.t(c, 5, 30, "ARMAS %d/%d" % [arsenal.armas.size(), Partida.max_armas()], UI.C_CIAN)
+	UI.t(c, 5, 31, "ARMAS %d/%d" % [arsenal.armas.size(), Partida.max_armas()], UI.C_CIAN)
 	for i in Datos.TOPE_ARMAS:
 		var x := 8.0 + (i % 2) * 54.0
-		var y := 44.0 + (i / 2) * 42.0
+		var y := 48.0 + (i / 2) * 42.0
 		if i < arsenal.armas.size():
 			var a = arsenal.armas[i]
 			_ranura_arma(c, x, y, a.id, a.nivel, Datos.NIVEL_MAX_CARTA, a.evo)
@@ -3208,11 +3271,11 @@ func dibujar_hud(c: CanvasItem) -> void:
 			_ranura_arma(c, x, y, "", 0, 0, false)
 		else:
 			_ranura_cerrada(c, x, y)
-	UI.t(c, 5, 128, "HABILIDADES %d/%d" % [habs.size(), Partida.max_habs()], UI.C_VERDE)
+	UI.t(c, 5, 133, "HABILIDADES %d/%d" % [habs.size(), Partida.max_habs()], UI.C_VERDE)
 	var ids: Array = habs.keys()
 	for i in Datos.TOPE_HABS:
 		var x := 8.0 + (i % 2) * 54.0
-		var y := 142.0 + (i / 2) * 42.0
+		var y := 150.0 + (i / 2) * 42.0
 		if i < ids.size():
 			_ranura_arma(c, x, y, ids[i], habs[ids[i]], Datos.max_hab(ids[i]), false)
 		elif i < Partida.max_habs():
@@ -3220,7 +3283,7 @@ func dibujar_hud(c: CanvasItem) -> void:
 		else:
 			_ranura_cerrada(c, x, y)
 	# desync y esquiva, abajo
-	var y0 := 230
+	var y0 := 240
 	if tiene_desync:
 		var listo := barra >= 100.0 and estado == "jugando"
 		var en_uso := estado == "desync"
@@ -3239,7 +3302,8 @@ func dibujar_hud(c: CanvasItem) -> void:
 		y0 += 48
 	else:
 		UI.t(c, 5, y0, "DESYNC", Color("3a3458"))
-		c.draw_texture(Datos.tex("ui_candado"), Vector2(48, y0 + 2))
+		# el candado va después del texto medido, con aire, y no pegado a la "C"
+		c.draw_texture(Datos.tex("ui_candado"), Vector2(5 + UI.ancho("DESYNC") + 5, y0 + 2))
 		y0 += 24
 	var listo_d := dash_cd <= 0
 	UI.t(c, 5, y0, "ESQUIVA  " + Controles.texto("esquivar"), UI.C_TEXTO if listo_d else UI.C_GRIS)
@@ -3312,16 +3376,27 @@ func dibujar_hud(c: CanvasItem) -> void:
 	c.draw_rect(Rect2(PX + 1, 1, (ANCHO - 2) * clampf(xp / xp_sig, 0.0, 1.0), 11), Color("c49a20"))
 	c.draw_rect(Rect2(PX + 1, 1, (ANCHO - 2) * clampf(xp / xp_sig, 0.0, 1.0), 4), UI.C_ORO)
 	UI.t(c, PX + 4, -2, "Nivel %d" % nivel_carta, Color.WHITE, 1, true)
-	# barra de jefe
+	# subiste de nivel tras el Desync: la barra destella antes de las cartas
+	if nivel_flash > 0 and tras_desync_t > 0 and estado == "jugando":
+		if (nivel_flash / 4) % 2 == 0:
+			c.draw_rect(Rect2(PX + 1, 1, ANCHO - 2, 11), Color(1, 1, 1, 0.75))
+		UI.tc(c, PX + ANCHO / 2.0, -2, "¡NIVEL %d!" % nivel_carta, UI.C_ORO, 1, true)
+	# barra de jefe: el nombre va a la izquierda en su placa y la barra sigue al lado, sin taparla (M08).
+	# Queda entre la barra de XP (y < 13) y la pista del nivel (y >= 34)
 	if jefe_actual and not jefe_actual.muerto:
 		var e := jefe_actual
-		var bx0 := PX + 30
-		var ban := int(ANCHO) - 60
+		var col_jefe: Color = UI.C_ROSA if e.super_jefe else UI.C_ROJO
+		# ancho entero: la placa y la barra caen en píxeles lógicos enteros. Alto 15, para la cola de la "g"
+		var an_nom := ceilf(UI.ancho(e.nombre))
+		c.draw_rect(Rect2(PX + 2, 14, an_nom + 8, 15), Color("0d0a18"))
+		c.draw_rect(Rect2(PX + 2, 14, 2, 15), col_jefe)
+		UI.t(c, PX + 7, 13, e.nombre, Color.WHITE)
+		var bx0: float = PX + an_nom + 12
+		var ban: float = PX + ANCHO - 3 - bx0
 		c.draw_rect(Rect2(bx0, 16, ban, 10), Color("0d0a18"))
-		c.draw_rect(Rect2(bx0 + 1, 17, (ban - 2) * clampf(e.hp / e.hpmax, 0.0, 1.0), 8), UI.C_ROSA if e.super_jefe else UI.C_ROJO)
+		c.draw_rect(Rect2(bx0 + 1, 17, (ban - 2) * clampf(e.hp / e.hpmax, 0.0, 1.0), 8), col_jefe)
 		for f in e.def.get("fases", []):
-			c.draw_rect(Rect2(bx0 + ban * f, 16, 1, 10), Color.WHITE)
-		UI.tc(c, PX + ANCHO / 2.0, 12, e.nombre, Color.WHITE, 1, true)
+			c.draw_rect(Rect2(round(bx0 + ban * f), 16, 1, 10), Color.WHITE)
 
 
 func dibujar_cartas(c: CanvasItem) -> void:
@@ -3337,6 +3412,25 @@ func dibujar_cartas(c: CanvasItem) -> void:
 		UI.tc(c, PX + ANCHO / 2.0, ty, "Ranuras llenas: ahora solo salen mejoras", UI.C_GRIS)
 		ty += 14
 	UI.tc(c, PX + ANCHO / 2.0, ty, "%s: cambiar cartas (te quedan %d)" % [Controles.texto("desync"), cambios_restantes], UI.C_TEXTO if cambios_restantes > 0 else Color("6a6488"))
+
+
+## Dónde va cada cosa dentro de una carta. El bloque de sinergia se arma desde abajo, para que
+## nada se salga aunque el nombre ocupe dos líneas o el título no quepa junto al OK (M07).
+func _layout_carta(ca: Dictionary, r: Rect2) -> Dictionary:
+	var l := {"y_pips": r.end.y - 41.0}
+	var y := r.position.y + 84.0 + 13.0 * UI.partir(ca.nombre, r.size.x - 8.0).size() + 2.0
+	l["y_fin_desc"] = y + 13.0 * UI.partir(ca.desc, r.size.x - 10.0).size()
+	if ca.has("sinergia"):
+		var util := r.size.x - 8.0
+		var titulo: String = ca.sin_txt
+		if ca.sin_ok and UI.ancho(titulo) + 4.0 + UI.ancho("¡OK!") > util:
+			titulo = "Evoluciona:"
+		var lineas := UI.partir(ca.sinergia, util - 18.0)
+		l["titulo"] = titulo
+		l["lineas"] = lineas
+		l["y_sin"] = r.end.y - 21.0 - 13.0 * lineas.size()
+		l["y_pips"] = l.y_sin - 7.0
+	return l
 
 
 func _dibujar_carta(c: CanvasItem, i: int) -> void:
@@ -3359,6 +3453,8 @@ func _dibujar_carta(c: CanvasItem, i: int) -> void:
 	if sel:
 		r.position.y -= 2.0
 		c.draw_rect(r.grow(2), Color.WHITE, false, 1.0)
+	# después de subir la seleccionada: así todo el contenido sube junto con su marco
+	var lay := _layout_carta(ca, r)
 	UI.marco(c, r, UI.C_PANEL, col)
 	c.draw_rect(Rect2(r.position, Vector2(r.size.x, 15)), col.darkened(0.55))
 	var cx := r.position.x + r.size.x / 2.0
@@ -3382,13 +3478,16 @@ func _dibujar_carta(c: CanvasItem, i: int) -> void:
 		for k in mx:
 			var xx := cx - w / 2.0 + k * 8
 			var pip := UI.C_ORO if k < ca.nv else (UI.C_TEXTO if k == ca.nv and (ticks / 15) % 2 == 0 else Color("3a3458"))
-			c.draw_rect(Rect2(xx, r.position.y + r.size.y - 41, 6, 5), pip)
+			c.draw_rect(Rect2(xx, lay.y_pips, 6, 5), pip)
 	# sinergia: que se necesita para evolucionar
 	if ca.has("sinergia"):
-		var yy := r.position.y + r.size.y - 34
+		var yy: float = lay.y_sin
 		c.draw_line(Vector2(r.position.x + 3, yy), Vector2(r.end.x - 3, yy), UI.C_LINEA, 1.0)
-		UI.t(c, r.position.x + 4, yy, ca.sin_txt, UI.C_GRIS)
-		c.draw_texture_rect(Datos.tex(ca.sin_icono), Rect2(r.position.x + 4, yy + 15, 16, 16), false)
-		UI.t(c, r.position.x + 22, yy + 14, ca.sinergia, UI.C_VERDE if ca.sin_ok else UI.C_TEXTO)
+		UI.t(c, r.position.x + 4, yy, lay.titulo, UI.C_GRIS)
 		if ca.sin_ok:
-			UI.t(c, r.end.x - 19, yy, "¡OK!", UI.C_VERDE)
+			UI.t(c, r.end.x - 4 - UI.ancho("¡OK!"), yy, "¡OK!", UI.C_VERDE)
+		c.draw_texture_rect(Datos.tex(ca.sin_icono), Rect2(r.position.x + 4, yy + 15, 16, 16), false)
+		var yn := yy + 14
+		for lin in lay.lineas:
+			UI.t(c, r.position.x + 22, yn, lin, UI.C_VERDE if ca.sin_ok else UI.C_TEXTO)
+			yn += 13
