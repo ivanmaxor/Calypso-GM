@@ -3577,6 +3577,7 @@ func _tests_pausa_equipo() -> void:
 	var habs: Array = Datos.HABILIDADES.keys()
 	var P = load("res://pantallas/pausa.gd")
 	var k := 0
+	var evo := false
 	while k < maxi(armas.size(), habs.size()):
 		for a in c.arsenal.armas.duplicate():
 			c.arsenal.armas.erase(a)
@@ -3584,7 +3585,7 @@ func _tests_pausa_equipo() -> void:
 		for j in Datos.TOPE_ARMAS:
 			if k + j < armas.size():
 				var ar = c.arsenal.agregar(armas[k + j])
-				ar.evo = j % 2 == 1
+				ar.evo = evo
 		for j in Datos.TOPE_HABS:
 			if k + j < habs.size():
 				c.habs[habs[k + j]] = Datos.max_hab(habs[k + j])
@@ -3601,7 +3602,10 @@ func _tests_pausa_equipo() -> void:
 			_ok(y <= P.COL_FIN, "la columna de %s cabe en la pantalla (%d)" % [tipo, int(y)])
 		_ok(p.entradas("armas").size() == c.arsenal.armas.size() and p.entradas("habs").size() == c.habs.size(), "se ve todo lo equipado")
 		p.free()
-		k += 4
+		# cada grupo de 4 se prueba normal y después todo evolucionado (lo más largo)
+		if evo:
+			k += 4
+		evo = not evo
 	var p2 = P.new()
 	p2.combate = c
 	var est: Array = p2.estrellas()

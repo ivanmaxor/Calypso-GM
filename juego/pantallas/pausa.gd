@@ -117,7 +117,7 @@ func _entrada(icono: String, nombre: String, niv: String, desc: String, evo: boo
 	# el nombre comparte línea con el nivel: si no caben, el nombre se acorta
 	var max_nombre := ancho_txt - UI.ancho(niv) - 6.0
 	while UI.ancho(nombre) > max_nombre and nombre.length() > 3:
-		nombre = nombre.substr(0, nombre.length() - 2) + "."
+		nombre = nombre.substr(0, nombre.length() - 2).strip_edges() + "."
 	return {"icono": icono, "nombre": nombre, "nivel": niv, "desc": UI.partir(desc, ancho_txt), "evo": evo}
 
 
