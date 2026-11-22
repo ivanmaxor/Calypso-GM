@@ -2979,6 +2979,7 @@ func _tests() -> void:
 	_tests_partida()
 	_tests_datos()
 	_tests_combate()
+	_tests_desafios_silueta()
 	_tests_armas()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
@@ -3557,6 +3558,24 @@ func _tests_combate() -> void:
 				_ok(not Datos.HABILIDADES[ca.id].has("requiere"), "nada del Desync sin Desync: " + ca.id)
 			_ok(ca.tipo != "cura2", "la Sopaipilla no sale sin Desync")
 	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M18: en Arsenal → Desafíos, el premio que no has ganado se ve como silueta; el ganado, entero.
+func _tests_desafios_silueta() -> void:
+	Partida.nuevo()
+	var ar = load("res://pantallas/arsenal.gd").new()
+	var tipos := {}
+	for de in Datos.DESAFIOS:
+		tipos[de.premio.tipo] = true
+		var ranura := String(de.premio.tipo).begins_with("ranura")
+		_ok(ar.premio_en_silueta(de) == (not ranura), "sin ganar, el premio de %s se ve en silueta (salvo ranuras)" % de.id)
+	_ok(tipos.has("arma") and tipos.has("hab"), "hay desafíos que dan armas y habilidades")
+	var de0: Dictionary = Datos.DESAFIOS[0]
+	Partida.d.desafios.append(de0.id)
+	_ok(not ar.premio_en_silueta(de0), "ganado, el premio se ve entero")
+	ar.free()
 	Partida.nuevo()
 
 
