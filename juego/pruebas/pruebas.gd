@@ -2980,6 +2980,7 @@ func _tests() -> void:
 	_tests_datos()
 	_tests_combate()
 	_tests_cartas_caben()
+	_tests_desync_visual()
 	_tests_armas()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
@@ -3591,6 +3592,52 @@ func _tests_cartas_caben() -> void:
 			_ok(l.y_sin + 14.0 + 13.0 * l.lineas.size() <= r.end.y, "la sinergia no se sale por abajo: " + ca.nombre)
 		var l2: Dictionary = c._layout_carta(ca, r)
 		_ok(l2.y_fin_desc <= l2.y_pips + 2.0, "la descripción no tapa los niveles: %s (%d > %d)" % [ca.nombre, int(l2.y_fin_desc), int(l2.y_pips)])
+	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M15: el número del Desync sube entero aunque el enemigo ya esté sentenciado, sin cambiar el daño.
+func _tests_desync_visual() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.jx = 200.0
+	c.jy = 300.0
+	c.enemigos.clear()
+	var e = c._crear_enemigo({"tipo": "bot", "ancla": [200, 180]})
+	e.x = 200.0
+	e.y = 180.0
+	e.modo = "actuar"
+	c.estado = "desync"
+	c.tiros.clear()
+	# balas de sobra para matarlo varias veces, una por una
+	for k in 30:
+		c.tiros.clear()
+		c.crear_tiro(200.0, 180.0, -PI / 2.0, 0.0, e.hpmax, Datos.tex("tiro2"), 1, false)
+		c._colisiones()
+		c.ticks += 1
+	_ok(c.cola_total < 30, "las balas que pasan de largo no suman a la cascada (%d)" % c.cola_total)
+	_ok(e.cola_vis == 30, "el número que se ve cuenta todas las balas (%d)" % e.cola_vis)
+	var dano: float = e.cola_dano
+	_ok(e.cola_hits == c.cola_total, "el daño en cola solo viene de las balas que pegaron")
+	# una misma bala que se queda varios cuadros sobre el sentenciado suma una sola vez
+	var vis_antes: int = e.cola_vis
+	c.tiros.clear()
+	c.crear_tiro(200.0, 180.0, -PI / 2.0, 0.0, e.hpmax, Datos.tex("tiro2"), 1, false)
+	for k in 5:
+		c._colisiones()
+		c.ticks += 1
+	_ok(e.cola_vis == vis_antes + 1, "una bala quieta sobre el sentenciado suma una vez (%d)" % (e.cola_vis - vis_antes))
+	c.tiros.clear()
+	c.cola_i = 0
+	c.cascada_t = 0.0
+	c.estado = "cascada"
+	c._tick_cascada()
+	_ok(e.cola_vis == 0 and e.cola_hits == 0, "la cascada reinicia el número")
+	_ok(dano > 0.0, "hubo daño en cola")
 	c.queue_free()
 	Partida.nuevo()
 
