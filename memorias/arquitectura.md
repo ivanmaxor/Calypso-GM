@@ -73,7 +73,7 @@ Todo el contenido y casi todo el balance viven en clases estáticas (`class_name
 
 ## Flujo de pantallas (`escenas/principal.gd`)
 
-`ir_titulo()` → ranuras y dificultad → `ir_mapa()` → panel de nivel → `ir_seleccion()` (si hay 2 naves o más) → diálogo `antes_<id>` → `ir_combate()` → `ir_resultado(res)` → premios y desafíos → diálogo `despues_<id>` → mapa. `ir_hangar(pestana)` abre la sala o una estación directa. Cada pantalla reemplaza a la anterior con un fundido (`_poner`).
+`ir_titulo()` → ranuras y dificultad → `ir_mapa()` → panel de nivel → `ir_seleccion()` (si hay 2 naves o más) → diálogo `antes_<id>` → `ir_combate()` → `ir_resultado(res)` → premios y desafíos → diálogo `despues_<id>` → mapa. `ir_hangar(pestana)` abre la sala o una estación directa. Sin pestaña, la sala parte sin foco si la opción de luz lo permite (`OPCIONES_LUZ` en `hangar_sala.gd`, #63). Cada pantalla reemplaza a la anterior con un fundido (`_poner`).
 
 ## Combate
 

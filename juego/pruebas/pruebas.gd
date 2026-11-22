@@ -26,6 +26,8 @@ extends "res://pruebas/pruebas_hangar.gd"
 ##   --demo  --saltar=SEG  --estres=N  --tests  --flujo  --verboso  --log  --perf
 ##   --flujo_hangar                               recorre la sala y las estaciones con teclas y mouse
 ##   --demo_arsenal  --sub=piezas  --sel=id       Arsenal a mitad de camino, pestaña y cosa seleccionada
+##   --hangar_luz=a|b|c|antes                     opción de luz y foco de la sala del Hangar (#63, ver hangar_sala.gd)
+##   --hangar_foco=id                             con --pantalla=hangar, deja enfocada esa estación de la sala
 ##
 ## Este archivo solo arranca y reparte: lee los argumentos, prepara la partida y despacha a cada módulo.
 ## Cadena (cada uno hereda del anterior): pruebas_base.gd -> pruebas_armas.gd -> pruebas_reglas.gd -> pruebas_bot.gd -> pruebas_menus.gd -> pruebas_hangar.gd -> pruebas.gd
@@ -43,6 +45,8 @@ func _ready() -> void:
 	set_physics_process(activo)
 	if not activo:
 		return
+	if args.has("hangar_luz"):
+		load("res://pantallas/hangar_sala.gd").opcion_luz = args.hangar_luz
 	if not DisplayServer.get_name() == "headless":
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
