@@ -442,13 +442,17 @@ func _tick_rayo(a: Arma) -> void:
 	var ultimo = null
 	var pego := 0
 	var alcance2: float = a.p.alcance * a.p.alcance
+	# cada salto pega un poco menos que el anterior: con muchos enemigos no barre la pantalla entera (M11)
+	var fuerza := 1.0
+	var decae: float = a.p.get("decae", 0.0)
 	for k in int(a.p.saltos):
 		var ob = c.enemigo_cercano(ax, ay, usados)
 		if ob == null or c.dist2(ax, ay, ob.x, ob.y) > alcance2:
 			break
 		usados[ob.id] = true
 		c.rayos.append({"a": Vector2(ax, ay), "b": Vector2(ob.x, ob.y), "t": 8})
-		_pegar(a, ob, ob.x, ob.y)
+		_pegar(a, ob, ob.x, ob.y, fuerza)
+		fuerza *= 1.0 - decae
 		ax = ob.x
 		ay = ob.y
 		ultimo = ob
