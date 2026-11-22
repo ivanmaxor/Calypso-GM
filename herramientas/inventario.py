@@ -109,7 +109,7 @@ w()
 
 w("## Piezas")
 w()
-w("Cada pieza da su base por rareza (× multiplicador) y suma un 4 % de esa base por nivel de mejora. Las pasivas se abren")
+w("Cada pieza da su base por rareza (× multiplicador) y suma un 8 % de esa base por nivel de mejora. Las pasivas se abren")
 w("según la rareza (`r`: 2 Poco común, 3 Raro, 4 Épico, 5 Legendario).")
 w()
 w("| id | Ranura | Nombre | Qué hace | Base | Pasivas | Mundo | Empieza a caer |")
