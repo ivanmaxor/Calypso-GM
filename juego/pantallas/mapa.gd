@@ -12,6 +12,13 @@ const CAMPO_W := 640 - PanelNave.ANCHO
 const MAPA_W := 1040.0
 const ICONO_EXTRA := {"ruleta": "icono_ruleta", "infinito": "icono_infinito"}
 const COLOR_EXTRA := {"ruleta": Color("ff6fb5"), "infinito": Color("6fe8ff")}
+## Los extras van en un círculo más grande que los niveles, con el icono a su tamaño real (32 px, sin escalar).
+const R_EXTRA := 21.0
+## Cuánto se apartan el premio, las estrellas y los carteles de un extra, para que su círculo no los tape.
+const ALZA_EXTRA := 4.0
+## Corrección óptica: el icono se centra por su caja, pero la palanca de la tragamonedas
+## deja el cuerpo corrido a la izquierda y el peso abajo. Se mueve para que se vea centrada.
+const AJUSTE_EXTRA := {"ruleta": Vector2(1, -1), "infinito": Vector2.ZERO}
 
 var panel: PanelNave
 var campo: Control
@@ -140,7 +147,7 @@ func _ready() -> void:
 		Sonido.tocar("desbloqueo", 1.0, -3.0)
 	elif foco_en != "" and nodos.has(foco_en):
 		actual = foco_en
-	ficha_pos = Datos.NODOS[actual] + Vector2(0, -34)
+	ficha_pos = Datos.NODOS[actual] + FICHA
 	ficha_obj = ficha_pos
 	cam = clampf(Datos.NODOS[actual].x - CAMPO_W / 2.0, 0.0, MAPA_W - CAMPO_W)
 	cam_obj = cam
@@ -306,12 +313,18 @@ func _extra_arriba(id: String, a: String, b: String) -> void:
 	x.focus_previous = x.get_path_to(nodos[a])
 
 
+## Dónde se estaciona la nave: a la izquierda del nivel, sobre el camino por donde llegó.
+## Encima del nivel quedaba detrás del recuadro del premio y solo se le veía la llama.
+## (generar_mapa.py usa este mismo valor para no dibujar utilería ahí).
+const FICHA := Vector2(-40, 0)
+
+
 func al_enfocar(n: Nodo) -> void:
 	Sonido.tocar("nodo", 1.0, -6.0)
 	ultimo_foco = n
 	var p: Vector2 = n.position + Vector2(22, 22)
 	if n.id != "portal" and Partida.nivel_abierto(n.id):
-		ficha_obj = p + Vector2(0, -34)
+		ficha_obj = p + FICHA
 	if p.x - cam < 60.0 or p.x - cam > CAMPO_W - 60.0:
 		cam_obj = clampf(p.x - CAMPO_W / 2.0, 0.0, MAPA_W - CAMPO_W)
 
@@ -443,6 +456,9 @@ func _dibujar_campo() -> void:
 		var col := UI.C_ORO if abierto else Color(0.05, 0.04, 0.1, 0.7)
 		for q: Vector2 in curva[i]:
 			var x: float = q.x - cx
+			# el camino llega hasta el portal, pero no se pinta dentro del aro
+			if absf(q.x - Datos.PORTAL.x) < 28.0 and absf(q.y - Datos.PORTAL.y) < 36.0:
+				continue
 			if x > -3 and x < CAMPO_W + 3:
 				campo.draw_rect(Rect2(round(x) - 1, round(q.y) - 1, 3, 3), col)
 	# los niveles extra: punteado en su color cuando se abren
@@ -540,7 +556,7 @@ func _dibujar_extra(n: Nodo, c: Vector2, foco: bool) -> void:
 	var abierto: bool = Partida.nivel_abierto(n.id)
 	var hecho: bool = Partida.nivel_completado(n.id)
 	var col: Color = COLOR_EXTRA[modo]
-	var r := 17.0
+	var r := R_EXTRA
 	n.draw_circle(c, r + 2, Color("0d0a18"))
 	n.draw_circle(c, r, col.darkened(0.6) if abierto else Color("3a3458"))
 	n.draw_arc(c, r, 0, TAU, 32, col if abierto else Color("0d0a18"), 2.0, false)
@@ -549,36 +565,37 @@ func _dibujar_extra(n: Nodo, c: Vector2, foco: bool) -> void:
 		n.draw_arc(c, r + pulso + 1, 0, TAU, 32, Color(col, 0.7), 1.0, false)
 	if foco:
 		_anillo(n, c, r + 5.0, Color.WHITE)
-	n.draw_texture_rect(Datos.tex(ICONO_EXTRA[modo]), Rect2(c - Vector2(14, 14), Vector2(28, 28)), false, Color.WHITE if abierto else Color(0.3, 0.3, 0.4))
+	n.draw_texture(Datos.tex(ICONO_EXTRA[modo]), c - Vector2(16, 16) + AJUSTE_EXTRA[modo], Color.WHITE if abierto else Color(0.3, 0.3, 0.4))
 	if not abierto:
 		n.draw_texture(Datos.tex("ui_candado"), c - Vector2(7, 7))
 	if modo == "ruleta":
 		if hecho:
-			_estrellas(n)
+			_estrellas(n, ALZA_EXTRA)
 		else:
-			_caja_premio(n, def.premio, abierto)
-	_celebrar(n, c, r)
+			_caja_premio(n, def.premio, abierto, ALZA_EXTRA)
+	_celebrar(n, c, r, ALZA_EXTRA)
 
 
-func _estrellas(n: Nodo) -> void:
+## "baja": cuánto más abajo van, para un círculo más grande que el de un nivel.
+func _estrellas(n: Nodo, baja := 0.0) -> void:
 	var est: int = Partida.estrellas(n.id)
 	for k in 3:
 		var tx: Texture2D = Datos.tex("ui_estrella" if k < est else "ui_estrella_vacia")
-		n.draw_texture(tx, Vector2(22 - 21 + k * 14, 36))
+		n.draw_texture(tx, Vector2(22 - 21 + k * 14, 36 + baja))
 
 
-func _caja_premio(n: Nodo, premio: Dictionary, abierto: bool) -> void:
-	var y := -24.0 + roundf(sin(t * 0.07 + n.position.x) * 1.5)
+func _caja_premio(n: Nodo, premio: Dictionary, abierto: bool, alza := 0.0) -> void:
+	var y := -24.0 - alza + roundf(sin(t * 0.07 + n.position.x) * 1.5)
 	var box := Rect2(11, y, 22, 22)
 	n.draw_rect(box, Color("1d1736"))
 	n.draw_rect(box, UI.C_ORO if abierto else Color("6a6488"), false, 1.0)
 	_icono_premio(n, premio, box.grow(-1), abierto)
 
 
-func _celebrar(n: Nodo, c: Vector2, r: float) -> void:
+func _celebrar(n: Nodo, c: Vector2, r: float, alza := 0.0) -> void:
 	if (recien == n.id or recien_extra == n.id) and recien_t > 0 and (recien_t / 8) % 2 == 0:
 		_anillo(n, c, r + 9.0, UI.C_ORO)
-		UI.tc(n, 22, -40, "¡NUEVO!", UI.C_ORO, 1, true)
+		UI.tc(n, 22, -40 - alza, "¡NUEVO!", UI.C_ORO, 1, true)
 
 
 func _anillo(n: Control, c: Vector2, r: float, col: Color) -> void:
@@ -624,9 +641,10 @@ func _dibujar_info() -> void:
 				txt = "Cerrado: primero gana %s" % Datos.ORDEN_NIVELES[Datos.ORDEN_NIVELES.find(f.id) - 1]
 		if Partida.nivel_completado(f.id):
 			abajo = 54.0
+	var alza: float = ALZA_EXTRA if Datos.EXTRAS.has(f.id) else 0.0
 	var cx: float = f.position.x + 22.0 - round(cam)
-	var y: float = f.position.y + abajo
+	var y: float = f.position.y + abajo + alza
 	# abajo no hay espacio: se muestra encima, sobre el recuadro del premio
 	if y > 326.0:
-		y = f.position.y - 46.0
+		y = f.position.y - 46.0 - alza
 	UI.cartel(capa_info, cx, y, txt, col, Rect2(0, 0, CAMPO_W, 360))

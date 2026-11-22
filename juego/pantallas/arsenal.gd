@@ -107,12 +107,23 @@ class Fila extends Button:
 			spr.region_enabled = true
 			spr.region_rect = Rect2(4 * 48, 0, 48, 48)
 			spr.texture = Datos.tex("nave2_" + de.premio.id)
-			var mat := ShaderMaterial.new()
-			mat.shader = load("res://arte/nave.gdshader")
-			Partida.preparar_material(mat, de.premio.id)
-			spr.material = mat
+			if a.premio_en_silueta(de):
+				# sin el shader de pintura, para que la silueta quede negra entera
+				spr.modulate = Color(0, 0, 0, 1)
+			else:
+				var mat := ShaderMaterial.new()
+				mat.shader = load("res://arte/nave.gdshader")
+				Partida.preparar_material(mat, de.premio.id)
+				spr.material = mat
 			spr.position = Vector2(18, 17)
 			add_child(spr)
+			# la nave es un hijo y se dibuja encima del _draw de la fila: el candado va como otro hijo, después
+			if a.premio_en_silueta(de):
+				var cand := Sprite2D.new()
+				cand.texture = Datos.tex("ui_candado")
+				cand.centered = false
+				cand.position = Vector2(24, 21)
+				add_child(cand)
 
 	func _draw() -> void:
 		var alto := ALTO_FILA - 2.0
@@ -128,7 +139,10 @@ class Fila extends Button:
 			UI.t(self, 38, 1, "???", UI.C_GRIS)
 			UI.t(self, 38, 16, "Se revela más adelante.", Color("6a6488"))
 			return
-		a.dibujar_premio(self, de, Vector2(2, 1))
+		var silueta: bool = a.premio_en_silueta(de)
+		a.dibujar_premio(self, de, Vector2(2, 1), silueta)
+		if silueta and spr == null:
+			draw_texture(Datos.tex("ui_candado"), Vector2(24, 21))
 		UI.t(self, 38, 1, de.txt, UI.C_VERDE if hecho else UI.C_TEXTO)
 		UI.t(self, 38, 16, "Premio: " + a.nombre_premio(de), UI.C_GRIS)
 		var v: int = mini(Partida.valor_stat(de.stat), de.meta)
@@ -701,14 +715,21 @@ func nombre_premio(de: Dictionary) -> String:
 	return ""
 
 
-func dibujar_premio(c: Control, de: Dictionary, pos: Vector2) -> void:
+## Lo que todavía no ganas se ve como silueta, igual que en Armas y Habilidades: el desafío se lee,
+## pero el premio guarda el misterio (M18). Las ranuras no esconden nada, así que se ven siempre.
+func premio_en_silueta(de: Dictionary) -> bool:
+	return not Partida.desafio_hecho(de.id) and not String(de.premio.tipo).begins_with("ranura")
+
+
+func dibujar_premio(c: Control, de: Dictionary, pos: Vector2, silueta := false) -> void:
 	var p: Dictionary = de.premio
+	var col := Color(0, 0, 0, 1) if silueta else Color.WHITE
 	match p.tipo:
 		"arma", "hab":
-			c.draw_texture(Datos.tex("icono_" + p.id), pos)
+			c.draw_texture(Datos.tex("icono_" + p.id), pos, col)
 		"mascota":
 			var tam: int = Partida.TAM_MASCOTA[0]
-			c.draw_texture_rect_region(Datos.tex_mascota(p.id, 0), Rect2(pos + Vector2(5, 5), Vector2(tam, tam)), Rect2(0, 0, tam, tam))
+			c.draw_texture_rect_region(Datos.tex_mascota(p.id, 0), Rect2(pos + Vector2(5, 5), Vector2(tam, tam)), Rect2(0, 0, tam, tam), col)
 		"ranura_arma":
 			c.draw_texture(Datos.tex("icono_ranura_arma"), pos)
 		"ranura_hab":
