@@ -161,6 +161,8 @@ class Gema:
 	var valor := 1
 	var tipo := "bit"
 	var imantada := false
+	## Bit que soltó la cascada: las cartas lo esperan antes de salir (M14).
+	var de_cascada := false
 	var t := 0
 
 
@@ -1077,6 +1079,7 @@ func _terminar_cascada() -> void:
 	_limpiar_todo()
 	for g in gemas:
 		g.imantada = true
+		g.de_cascada = g.tipo == "bit"
 	if stats.cura_cascada > 0:
 		curar(stats.cura_cascada)
 		texto(jx, jy - 26, "+%d" % int(stats.cura_cascada), UI.C_VERDE, 1)
@@ -1101,7 +1104,8 @@ func _terminar_cascada() -> void:
 	cascadas.append([cola_total, cascada_kills])
 	cola.clear()
 	cola_total = 0
-	tras_desync_t = TRAS_DESYNC
+	# si la cascada cierra el nivel, no hay cartas que esperar
+	tras_desync_t = 0 if victoria_pendiente else TRAS_DESYNC
 	estado = "victoria" if victoria_pendiente else "jugando"
 	if victoria_pendiente:
 		estado_t = 170.0
@@ -1265,6 +1269,9 @@ func _recoger(g: Gema) -> void:
 				xp_sig = XP_BASE + nivel_carta * XP_PASO
 				niveles_pendientes += 1
 				nivel_flash = RESPIRO_NIVEL
+				# el respiro se cumple entero aunque el nivel suba al final de la espera
+				if tras_desync_t > 0:
+					tras_desync_t = maxi(tras_desync_t, RESPIRO_NIVEL)
 
 
 func _cartel(s: String, c: Color) -> void:
@@ -2476,7 +2483,7 @@ func _revisar_cartas() -> void:
 		tras_desync_t -= 1
 		var en_camino := false
 		for g in gemas:
-			if g.imantada:
+			if g.de_cascada:
 				en_camino = true
 				break
 		if not en_camino and nivel_flash <= 0:
@@ -3339,7 +3346,7 @@ func dibujar_hud(c: CanvasItem) -> void:
 	c.draw_rect(Rect2(PX + 1, 1, (ANCHO - 2) * clampf(xp / xp_sig, 0.0, 1.0), 4), UI.C_ORO)
 	UI.t(c, PX + 4, -2, "Nivel %d" % nivel_carta, Color.WHITE, 1, true)
 	# subiste de nivel tras el Desync: la barra destella antes de las cartas
-	if nivel_flash > 0 and tras_desync_t > 0:
+	if nivel_flash > 0 and tras_desync_t > 0 and estado == "jugando":
 		if (nivel_flash / 4) % 2 == 0:
 			c.draw_rect(Rect2(PX + 1, 1, ANCHO - 2, 11), Color(1, 1, 1, 0.75))
 		UI.tc(c, PX + ANCHO / 2.0, -2, "¡NIVEL %d!" % nivel_carta, UI.C_ORO, 1, true)
