@@ -29,13 +29,15 @@ var ultimo_tipo := ""
 var vivos := {}  # tipo -> lista de instantes en que se van
 
 
-func _init(nivel: Dictionary, semilla: int) -> void:
+## "mult_ritmo" y "mult_inicio" vienen de la dificultad: más puntos por segundo es más enemigos a la vez,
+## y el inicio sube aparte para que haya presión desde el primer segundo.
+func _init(nivel: Dictionary, semilla: int, mult_ritmo := 1.0, mult_inicio := 1.0) -> void:
 	def = nivel
 	rng.seed = semilla
 	dur = maxf(float(nivel.get("duracion", 100.0)), 1.0)
 	var ri: Array = nivel.get("ritmo", [2.0, 4.0])
-	r0 = ri[0]
-	r1 = ri[1]
+	r0 = float(ri[0]) * mult_ritmo * mult_inicio
+	r1 = float(ri[1]) * mult_ritmo
 	mezcla = nivel.get("mezcla", [["bot", 1.0, 0.0]])
 	fase_ola = rng.randf() * TAU
 	if nivel.get("modo", "") == "infinito":

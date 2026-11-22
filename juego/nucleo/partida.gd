@@ -241,6 +241,7 @@ func ciclo() -> int:
 
 ## Cuánto cambian los enemigos, juntando dificultad y Nueva Partida +. Lo usa el combate.
 ## hp y dano multiplican; vel multiplica la velocidad de las balas; disparo multiplica el tiempo entre tiros.
+## ritmo, inicio, ganas y jefe_cd son la presión de la dificultad (ver CatalogoProgreso.dificultades).
 func mods_enemigos() -> Dictionary:
 	var c: int = mini(d.ciclo, CICLO_MAX)
 	var di := dif()
@@ -249,6 +250,10 @@ func mods_enemigos() -> Dictionary:
 		"dano": di.dano * pow(1.15, c),
 		"vel": di.vel * minf(1.0 + 0.04 * c, 1.25),
 		"disparo": di.disparo * maxf(1.0 - 0.04 * c, 0.75),
+		"ritmo": float(di.get("ritmo", 1.0)),
+		"inicio": float(di.get("inicio", 1.0)),
+		"ganas": float(di.get("ganas", 0.35)),
+		"jefe_cd": float(di.get("jefe_cd", 1.0)),
 	}
 
 

@@ -3285,6 +3285,7 @@ func _tests_datos() -> void:
 	for id in Datos.EXTRAS:
 		_tests_guion(id, Datos.NIVELES[id])
 	_tests_director()
+	_tests_presion_dificultad()
 	# dialogos
 	for k in Datos.DIALOGOS:
 		for l in Datos.DIALOGOS[k]:
@@ -3337,6 +3338,42 @@ func _tests_guion(id: String, nv: Dictionary) -> void:
 				_ok(Datos.RUTAS.has(ev.ruta), "ruta " + ev.ruta)
 			elif not ev.has("enjambre"):
 				_ok(ev.has("anclas"), "sin posicion en " + id)
+
+
+## M10 y M12: Difícil se nota en la presión (más enemigos, desde el inicio, jefes más seguidos), no solo en los números.
+## Normal queda igual que antes, y cada dificultad aprieta al menos lo mismo que la anterior.
+func _tests_presion_dificultad() -> void:
+	var D = load("res://combate/director.gd")
+	var orden := ["facil", "normal", "dificil", "extremo"]
+	for i in orden.size():
+		var di: Dictionary = Datos.DIFICULTADES[orden[i]]
+		for k in ["ritmo", "inicio", "ganas", "jefe_cd"]:
+			_ok(di.has(k), "la dificultad %s define %s" % [orden[i], k])
+		if i > 0:
+			var antes: Dictionary = Datos.DIFICULTADES[orden[i - 1]]
+			_ok(float(di.ritmo) >= float(antes.ritmo) and float(di.inicio) >= float(antes.inicio) and float(di.ganas) >= float(antes.ganas), "%s aprieta al menos como %s" % [orden[i], orden[i - 1]])
+			_ok(float(di.jefe_cd) <= float(antes.jefe_cd), "los jefes de %s atacan al menos tan seguido como en %s" % [orden[i], orden[i - 1]])
+	var normal: Dictionary = Datos.DIFICULTADES["normal"]
+	_ok(float(normal.ritmo) == 1.0 and float(normal.inicio) == 1.0 and float(normal.jefe_cd) == 1.0, "Normal no cambia la presión")
+	var dif: Dictionary = Datos.DIFICULTADES["dificil"]
+	for id in ["1-2", "1-6"]:
+		var nv: Dictionary = Datos.NIVELES[id]
+		var gn: Array = D.new(nv, 7).guion()
+		var gd: Array = D.new(nv, 7, float(dif.ritmo), float(dif.inicio)).guion()
+		var cuenta := func(g: Array, hasta: float) -> int:
+			var n := 0
+			for ev in g:
+				if ev.has("tipo") and D.COSTO.has(ev.tipo) and float(ev.t) <= hasta:
+					n += int(ev.n)
+			return n
+		var n_total: int = cuenta.call(gn, 9999.0)
+		var d_total: int = cuenta.call(gd, 9999.0)
+		_ok(d_total >= n_total * 1.25, "en Difícil %s trae bastantes más enemigos: %d contra %d" % [id, d_total, n_total])
+		_ok(cuenta.call(gd, 30.0) > cuenta.call(gn, 30.0), "en Difícil %s aprieta desde el inicio" % id)
+		print("  presión %s: Normal %d enemigos, Difícil %d (primeros 30 s: %d contra %d)" % [id, n_total, d_total, cuenta.call(gn, 30.0), cuenta.call(gd, 30.0)])
+	# el jefe ataca más seguido, pero su vida y su tope de daño no cambian por la dificultad
+	_ok(float(dif.jefe_cd) < 1.0, "en Difícil los jefes atacan más seguido")
+	_ok(Datos.ENEMIGOS.grua.tope_seg == 42.0 and Datos.ENEMIGOS.compactador.tope_seg == 50.0, "el tope de daño a los jefes se conserva")
 
 
 ## El director: determinista con semilla, gasta su presupuesto y respeta los tiempos pedidos.
