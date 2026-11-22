@@ -299,6 +299,9 @@ func _preparar_combate(c) -> void:
 		c.barra = float(args.barra)
 	if args.has("ruleta"):
 		c.ruleta_forzada = Array(args.ruleta.split(","))
+	# --pausa: abre el menú de pausa al partir, para capturarlo
+	if args.has("pausa"):
+		c.abrir_pausa.call_deferred()
 
 
 func _marcar_vistos() -> void:
@@ -2979,6 +2982,7 @@ func _tests() -> void:
 	_tests_partida()
 	_tests_datos()
 	_tests_combate()
+	_tests_pausa_equipo()
 	_tests_desafios_silueta()
 	_tests_xp_tras_desync()
 	_tests_cartas_caben()
@@ -3560,6 +3564,59 @@ func _tests_combate() -> void:
 			if ca.tipo == "hab":
 				_ok(not Datos.HABILIDADES[ca.id].has("requiere"), "nada del Desync sin Desync: " + ca.id)
 			_ok(ca.tipo != "cura2", "la Sopaipilla no sale sin Desync")
+	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M16 y M17: la pausa muestra lo equipado y las estrellas, y todo cabe en su columna.
+func _tests_pausa_equipo() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-5"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	# lo más largo posible: todas las armas y habilidades, de a 4 (el tope de ranuras)
+	var armas: Array = Datos.ARMAS.keys()
+	var habs: Array = Datos.HABILIDADES.keys()
+	var P = load("res://pantallas/pausa.gd")
+	var k := 0
+	var evo := false
+	while k < maxi(armas.size(), habs.size()):
+		for a in c.arsenal.armas.duplicate():
+			c.arsenal.armas.erase(a)
+		c.habs.clear()
+		for j in Datos.TOPE_ARMAS:
+			if k + j < armas.size():
+				var ar = c.arsenal.agregar(armas[k + j])
+				ar.evo = evo
+		for j in Datos.TOPE_HABS:
+			if k + j < habs.size():
+				c.habs[habs[k + j]] = Datos.max_hab(habs[k + j])
+		var p = P.new()
+		p.combate = c
+		for tipo in ["armas", "habs"]:
+			var lista: Array = p.entradas(tipo)
+			var y: float = P.COL_Y + 16.0
+			for e in lista:
+				_ok(UI.ancho(e.nombre) + 6.0 + UI.ancho(e.nivel) <= P.COL_ANCHO - 38.0, "el nombre y el nivel caben en la pausa: " + e.nombre)
+				for lin in e.desc:
+					_ok(UI.ancho(lin) <= P.COL_ANCHO - 38.0, "la descripción cabe en la pausa: " + lin)
+				y = maxf(y + 12.0 + 13.0 * e.desc.size(), y + 34.0) + 6.0
+			_ok(y <= P.COL_FIN, "la columna de %s cabe en la pantalla (%d)" % [tipo, int(y)])
+		_ok(p.entradas("armas").size() == c.arsenal.armas.size() and p.entradas("habs").size() == c.habs.size(), "se ve todo lo equipado")
+		p.free()
+		# cada grupo de 4 se prueba normal y después todo evolucionado (lo más largo)
+		if evo:
+			k += 4
+		evo = not evo
+	var p2 = P.new()
+	p2.combate = c
+	var est: Array = p2.estrellas()
+	_ok(est.size() == 4, "en un nivel normal se ven las 3 estrellas")
+	for e in est:
+		_ok(UI.partir(e.txt, P.CENTRO_ANCHO - 18.0).size() == 1, "la estrella cabe en una línea: " + e.txt)
+	p2.free()
 	c.queue_free()
 	Partida.nuevo()
 
