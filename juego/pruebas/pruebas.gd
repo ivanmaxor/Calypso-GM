@@ -2979,6 +2979,7 @@ func _tests() -> void:
 	_tests_partida()
 	_tests_datos()
 	_tests_combate()
+	_tests_desync_visual()
 	_tests_armas()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
@@ -3556,6 +3557,43 @@ func _tests_combate() -> void:
 			if ca.tipo == "hab":
 				_ok(not Datos.HABILIDADES[ca.id].has("requiere"), "nada del Desync sin Desync: " + ca.id)
 			_ok(ca.tipo != "cura2", "la Sopaipilla no sale sin Desync")
+	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M15: el número del Desync sube entero aunque el enemigo ya esté sentenciado, sin cambiar el daño.
+func _tests_desync_visual() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.jx = 200.0
+	c.jy = 300.0
+	c.enemigos.clear()
+	var e = c._crear_enemigo({"tipo": "bot", "ancla": [200, 180]})
+	e.x = 200.0
+	e.y = 180.0
+	e.modo = "actuar"
+	c.estado = "desync"
+	c.tiros.clear()
+	# balas de sobra para matarlo varias veces, una por una
+	for k in 30:
+		c.tiros.clear()
+		c.crear_tiro(200.0, 180.0, -PI / 2.0, 0.0, e.hpmax, Datos.tex("tiro2"), 1, false)
+		c._colisiones()
+		c.ticks += 1
+	_ok(c.cola_total < 30, "las balas que pasan de largo no suman a la cascada (%d)" % c.cola_total)
+	_ok(e.cola_vis == 30, "el número que se ve cuenta todas las balas (%d)" % e.cola_vis)
+	var dano: float = e.cola_dano
+	_ok(e.cola_hits == c.cola_total, "el daño en cola solo viene de las balas que pegaron")
+	c.cola_i = 0
+	c.cascada_t = 0.0
+	c.estado = "cascada"
+	c._tick_cascada()
+	_ok(e.cola_vis == 0 and e.cola_hits == 0, "la cascada reinicia el número")
+	_ok(dano > 0.0, "hubo daño en cola")
 	c.queue_free()
 	Partida.nuevo()
 

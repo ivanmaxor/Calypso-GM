@@ -89,6 +89,8 @@ class Enemigo:
 	var cd3 := 200.0
 	var muerto := false
 	var cola_hits := 0
+	## Solo para mostrar: cuenta también las balas que pasan de largo cuando ya está sentenciado (M15).
+	var cola_vis := 0
 	var cola_dano := 0.0
 	var fase := 0
 	var inv := 0.0
@@ -146,6 +148,8 @@ class Tiro:
 	var rot := 0.0
 	var rotar := false
 	var golpeados := {}
+	## Enemigos sentenciados que esta bala ya cruzó en el Desync: solo suman al contador visible.
+	var vistos := {}
 	var obj = null
 
 
@@ -1053,6 +1057,7 @@ func _tick_cascada() -> void:
 		dmg = minf(dmg, e.hpmax * 0.35)
 	var hits := e.cola_hits
 	e.cola_hits = 0
+	e.cola_vis = 0
 	e.cola_dano = 0.0
 	var nota: int = ESCALA[mini(cascada_nota, ESCALA.size() - 1)]
 	cascada_nota += 1
@@ -1854,6 +1859,11 @@ func _colisiones() -> void:
 				continue
 			# en Desync, el que ya está sentenciado no ataja más balas: pasan al siguiente
 			if en_desync and not e.jefe and e.cola_dano * bono >= e.hp:
+				# igual se cuenta en el número que se ve, para que suba entero (no cambia el daño)
+				if not t.vistos.has(e.id):
+					t.vistos[e.id] = true
+					e.cola_vis += 1
+					e.flash = 2
 				continue
 			t.golpeados[e.id] = ticks + t.rehit if t.rehit > 0 else 2147483647
 			golpear(e, t.dmg, t.crit, t.x, t.y)
@@ -1970,6 +1980,7 @@ func golpear(e: Enemigo, dmg: float, crit: bool, x: float, y: float) -> void:
 		if e.cola_hits == 0:
 			cola.append(e)
 		e.cola_hits += 1
+		e.cola_vis += 1
 		e.cola_dano += dmg * e.mult_dano
 		cola_total += 1
 		e.flash = 2
@@ -2991,7 +3002,7 @@ func dibujar_frente(c: CanvasItem) -> void:
 		for e in cola:
 			if e.muerto or e.cola_hits <= 0:
 				continue
-			var lbl := "X%d" % e.cola_hits
+			var lbl := "X%d" % maxi(e.cola_vis, e.cola_hits)
 			var an := UI.ancho(lbl)
 			var yy: float = e.y - e.def.h / 2.0 - 12.0
 			# en dorado, los que ya están sentenciados
