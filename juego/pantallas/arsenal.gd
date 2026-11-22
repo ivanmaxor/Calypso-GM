@@ -117,6 +117,13 @@ class Fila extends Button:
 				spr.material = mat
 			spr.position = Vector2(18, 17)
 			add_child(spr)
+			# la nave es un hijo y se dibuja encima del _draw de la fila: el candado va como otro hijo, después
+			if a.premio_en_silueta(de):
+				var cand := Sprite2D.new()
+				cand.texture = Datos.tex("ui_candado")
+				cand.centered = false
+				cand.position = Vector2(24, 21)
+				add_child(cand)
 
 	func _draw() -> void:
 		var alto := ALTO_FILA - 2.0
@@ -134,7 +141,7 @@ class Fila extends Button:
 			return
 		var silueta: bool = a.premio_en_silueta(de)
 		a.dibujar_premio(self, de, Vector2(2, 1), silueta)
-		if silueta:
+		if silueta and spr == null:
 			draw_texture(Datos.tex("ui_candado"), Vector2(24, 21))
 		UI.t(self, 38, 1, de.txt, UI.C_VERDE if hecho else UI.C_TEXTO)
 		UI.t(self, 38, 16, "Premio: " + a.nombre_premio(de), UI.C_GRIS)
