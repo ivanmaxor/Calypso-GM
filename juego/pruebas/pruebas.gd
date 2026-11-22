@@ -2980,8 +2980,43 @@ func _tests() -> void:
 	_tests_datos()
 	_tests_combate()
 	_tests_armas()
+	_tests_hangar_delante()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
+
+
+## M02: lo del fondo que va delante de una estación es un recorte exacto del fondo, en su lugar, y tapa a alguna estación.
+func _tests_hangar_delante() -> void:
+	_ok(SalaHangar.DELANTE.size() >= 3, "M02: hay sprites para lo que va delante de las estaciones")
+	var fondo: Image = Datos.tex("hangar_fondo").get_image().duplicate()
+	fondo.convert(Image.FORMAT_RGBA8)
+	for id in SalaHangar.DELANTE:
+		var r: Rect2 = SalaHangar.DELANTE[id]
+		var nombre: String = "hangar_delante_" + id
+		_ok(Datos.existe_tex(nombre), "M02: existe " + nombre)
+		if not Datos.existe_tex(nombre):
+			continue
+		var tex := Datos.tex(nombre)
+		_ok(Vector2(tex.get_size()) == r.size, "M02: %s mide lo que dice SalaHangar" % nombre)
+		_ok(r.position.y >= 26.0 and r.position.x >= 0.0 and r.end.x <= 640.0 and r.end.y <= 360.0, "M02: %s no tapa la barra ni sale de la pantalla" % nombre)
+		var tapa := false
+		for est in SalaHangar.ORDEN:
+			tapa = tapa or r.intersects(SalaHangar.OBJETOS[est].r)
+		_ok(tapa, "M02: %s queda encima de alguna estación" % nombre)
+		var img: Image = tex.get_image().duplicate()
+		img.convert(Image.FORMAT_RGBA8)
+		var distintos := 0
+		var llenos := 0
+		for y in img.get_height():
+			for x in img.get_width():
+				var c := img.get_pixel(x, y)
+				if c.a8 == 0:
+					continue
+				llenos += 1
+				var f := fondo.get_pixel(int(r.position.x) + x, int(r.position.y) + y)
+				if c.r8 != f.r8 or c.g8 != f.g8 or c.b8 != f.b8 or c.a8 != 255:
+					distintos += 1
+		_ok(llenos > 0 and distintos == 0, "M02: %s calza pixel a pixel con el fondo (%d distintos)" % [nombre, distintos])
 
 
 func _tests_teclas() -> void:
