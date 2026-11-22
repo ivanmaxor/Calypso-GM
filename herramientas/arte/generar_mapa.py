@@ -263,14 +263,14 @@ d.rectangle([44, 150, 72, 154], fill=hexc("#c04a0c") + (255,), outline=k)
 pila_llantas(138, 176)
 caja(226, 196)
 auto_roto(205, 236)
-sombra(330, 207, 26)
-sprite("bot", 0, 32, 330, 212, 1)
+sombra(310, 207, 26)
+sprite("bot", 0, 32, 310, 212, 1)
 pila_llantas(318, 188)
-tubo(340, 186, 34)
+tubo(340, 172, 34)
 sombra(446, 180, 40, 6)
 sprite("grua", 0, 96, 446, 196, 1)
 auto_roto(444, 200)
-caja(470, 306, 16)
+caja(470, 312, 16)
 pila_llantas(556, 188)
 tubo(566, 300, 58)
 sombra(640, 300, 18)
@@ -317,6 +317,27 @@ ALZA_EXTRA = 4  # lo que se apartan el premio y las estrellas de un extra
 NAVE = (-40, 0)  # dónde se estaciona la nave respecto del nivel con el foco (mapa.gd, FICHA)
 
 
+def caja_naves():
+    """La caja que ocupa la nave más grande en el mapa: Sprite2D centrado en su cuadro de 48 px, con los
+    cuadros 4 y 5 (mapa.gd) y 2 px de vaivén. Se mide de los sprites para no quedarse corto con naves nuevas."""
+    x0 = y0 = 99
+    x1 = y1 = -99
+    for f in sorted(os.listdir(SP)):
+        if not (f.startswith("nave2_") and f.endswith(".png")):
+            continue
+        a = np.array(Image.open(os.path.join(SP, f)).convert("RGBA"))[:, :, 3]
+        for cuadro in (4, 5):
+            ys, xs = np.nonzero(a[0:48, cuadro * 48:(cuadro + 1) * 48])
+            if len(xs):
+                x0, x1 = min(x0, xs.min() - 24), max(x1, xs.max() - 24 + 1)
+                y0, y1 = min(y0, ys.min() - 24 - 2), max(y1, ys.max() - 24 + 1 + 2)
+    return int(x0), int(y0), int(x1), int(y1)
+
+
+CAJA_NAVE = caja_naves()
+print("caja de la nave más grande:", CAJA_NAVE)
+
+
 def zonas(nombre, c, extra):
     """Rectángulos (x0, y0, x1, y1) que el juego dibuja en un nivel, y el radio de su círculo."""
     x, y = c
@@ -324,7 +345,8 @@ def zonas(nombre, c, extra):
         return [], R_PORTAL + 5
     alza = ALZA_EXTRA if extra else 0
     r = (R_EXTRA if extra else (R_JEFE if nombre in JEFES else R_NIVEL)) + 5  # con el anillo del foco
-    z = [("nave", x + NAVE[0] - 14, y + NAVE[1] - 16, x + NAVE[0] + 13, y + NAVE[1] + 17)]
+    cx0, cy0, cx1, cy1 = CAJA_NAVE
+    z = [("nave", x + NAVE[0] + cx0, y + NAVE[1] + cy0, x + NAVE[0] + cx1, y + NAVE[1] + cy1)]
     if nombre != "1-INF":
         z.append(("premio", x - 12, y - 48 - alza, x + 12, y - 22 - alza))
         z.append(("estrellas", x - 21, y + 14 + alza, x + 21, y + 30 + alza))
