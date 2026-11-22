@@ -94,6 +94,12 @@ func cargar() -> void:
 	a.cargar_desde(d, DEFECTO)
 
 
+## Las teclas de fábrica sin guardar. Lo usan las pruebas al partir de cero.
+func restablecer() -> void:
+	a = Asignaciones.new(DEFECTO)
+	aplicar()
+
+
 func restaurar_todo() -> void:
 	a = Asignaciones.new(DEFECTO)
 	aplicar()

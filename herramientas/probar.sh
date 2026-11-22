@@ -6,6 +6,8 @@
 #   probar.sh cap <carpeta> <frames> [--otros args]  capturas reales del juego
 #   probar.sh flujo [carpeta]        recorre los menus con teclas reales
 #   probar.sh flujo_hangar [carpeta] recorre la sala y las estaciones del Hangar con teclas y mouse
+#                                    Los dos corren sin ventana (--headless): asi no les llegan teclas ni mando
+#                                    del PC. Con [carpeta] abren la ventana, porque las capturas la necesitan.
 #   probar.sh campana [--otros args] juega el mundo entero en orden
 #   probar.sh exe                    exporta build/Calypso.exe
 # Variables opcionales:
@@ -48,13 +50,13 @@ case "$accion" in
     ;;
   flujo)
     carpeta="$1"
-    if [ -n "$carpeta" ]; then cap="--capturas=$carpeta"; else cap=""; fi
-    timeout 400 "$G" --path . --audio-driver Dummy --fixed-fps 60 --disable-vsync -- --pruebas --flujo --guardado="${P}_flujo" --reiniciar $cap 2>&1 | grep -vE "$FILTRO" | head -160
+    if [ -n "$carpeta" ]; then cap="--capturas=$carpeta"; ventana=""; else cap=""; ventana="--headless"; fi
+    timeout 400 "$G" $ventana --path . --audio-driver Dummy --fixed-fps 60 --disable-vsync -- --pruebas --flujo --guardado="${P}_flujo" --reiniciar $cap 2>&1 | grep -vE "$FILTRO" | head -160
     ;;
   flujo_hangar)
     carpeta="$1"
-    if [ -n "$carpeta" ]; then cap="--capturas=$carpeta"; else cap=""; fi
-    timeout 400 "$G" --path . --audio-driver Dummy --fixed-fps 60 --disable-vsync -- --pruebas --flujo_hangar --guardado="${P}_fh" --reiniciar $cap 2>&1 | grep -vE "$FILTRO" | head -400
+    if [ -n "$carpeta" ]; then cap="--capturas=$carpeta"; ventana=""; else cap=""; ventana="--headless"; fi
+    timeout 400 "$G" $ventana --path . --audio-driver Dummy --fixed-fps 60 --disable-vsync -- --pruebas --flujo_hangar --guardado="${P}_fh" --reiniciar $cap 2>&1 | grep -vE "$FILTRO" | head -400
     ;;
   campana)
     timeout 590 "$G" --headless --path . --fixed-fps 60 --disable-vsync -- --pruebas --bot --campana --guardado="${P}_camp" --reiniciar "$@" 2>&1 | grep -vE "$FILTRO" | head -120

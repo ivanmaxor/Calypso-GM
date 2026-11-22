@@ -92,8 +92,11 @@ func _ready() -> void:
 
 
 ## Parte de cero de verdad: solo toca los archivos de esta prueba, nunca los del jugador.
+## Las opciones y las teclas también: Ajustes y Controles ya las cargaron, así que se vuelven a las de fábrica.
 func _limpiar_guardados() -> void:
 	var nombres: Array = [Partida.prueba + ".json", Partida.prueba + "_global.json", Partida.prueba + "_v2.json", Partida.prueba + "_importar.json"]
+	nombres.append(Partida.prueba + "_ajustes.cfg")
+	nombres.append(Partida.prueba + "_controles.cfg")
 	for i in range(1, Partida.NUM_SLOTS + 1):
 		nombres.append("%s_%d.json" % [Partida.prueba, i])
 	for n in nombres:
@@ -102,6 +105,9 @@ func _limpiar_guardados() -> void:
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(ruta))
 	Partida._cargar_global()
 	Partida.nuevo()
+	Ajustes.restablecer()
+	Controles.restablecer()
+	Sonido.aplicar_volumen()
 
 
 func _armar_ranuras(txt: String) -> void:
@@ -2144,9 +2150,8 @@ func _clic(c: Control, boton := MOUSE_BUTTON_LEFT) -> void:
 func _clic_en(pos: Vector2, boton := MOUSE_BUTTON_LEFT) -> void:
 	_mover_mouse(pos)
 	await _cuadros(2)
-	var escala := float(get_window().size.x) / 640.0
 	var ev := InputEventMouseButton.new()
-	ev.position = pos * escala
+	ev.position = _raton(pos)
 	ev.global_position = ev.position
 	ev.button_index = boton
 	ev.pressed = true
@@ -2163,9 +2168,8 @@ func _clic_en(pos: Vector2, boton := MOUSE_BUTTON_LEFT) -> void:
 
 
 func _mover_mouse(pos: Vector2) -> void:
-	var escala := float(get_window().size.x) / 640.0
 	var ev := InputEventMouseMotion.new()
-	ev.position = pos * escala
+	ev.position = _raton(pos)
 	ev.global_position = ev.position
 	Input.parse_input_event(ev)
 
@@ -2363,9 +2367,12 @@ func _letra(k: Key, c: String) -> void:
 	await _esperar(3)
 
 
-## El mouse, en coordenadas de la pantalla lógica de 640x360.
+## Pasa un punto de la pantalla lógica de 640x360 a coordenadas de la ventana, que es lo que traen los
+## eventos del mouse. Usa la transformación del estiramiento y no el ancho de la ventana: sin ventana
+## (--headless) la ventana mide 64x64 y el juego queda centrado con franjas, así que multiplicar por el
+## ancho mandaba los clics a otro lado.
 func _raton(p: Vector2) -> Vector2:
-	return p * (float(get_window().size.x) / 640.0)
+	return get_viewport().get_final_transform() * p
 
 
 func _raton_mover(p: Vector2) -> void:
@@ -3077,8 +3084,31 @@ func _tests() -> void:
 	_tests_armas()
 	_tests_hangar_delante()
 	_tests_hitbox_indicador()
+	_tests_pruebas_aisladas()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
+
+
+## #47: cada prueba tiene sus propias opciones y teclas, y --reiniciar las deja de fábrica.
+## Lo del mouse sin ventana lo prueban los pasos de mouse de flujo y flujo_hangar, que corren sin ventana.
+func _tests_pruebas_aisladas() -> void:
+	_ok(Ajustes._ruta() == "user://%s_ajustes.cfg" % Partida.prueba, "#47: las opciones de prueba llevan el prefijo de --guardado")
+	_ok(Controles._ruta() == "user://%s_controles.cfg" % Partida.prueba, "#47: las teclas de prueba llevan el prefijo de --guardado")
+	var musica := Ajustes.musica
+	var auto := Ajustes.disparo_auto
+	Ajustes.musica = 10
+	Ajustes.disparo_auto = not Ajustes.DEFECTO.disparo_auto
+	Ajustes.guardar()
+	Controles.a.asignar("esquivar", "teclado", 1, "key:Q")
+	Controles.guardar()
+	_ok(FileAccess.file_exists(Ajustes._ruta()) and FileAccess.file_exists(Controles._ruta()), "#47: se guardaron opciones y teclas de prueba")
+	_limpiar_guardados()
+	_ok(not FileAccess.file_exists(Ajustes._ruta()), "#47: --reiniciar borra las opciones de prueba")
+	_ok(not FileAccess.file_exists(Controles._ruta()), "#47: --reiniciar borra las teclas de prueba")
+	_ok(Ajustes.musica == Ajustes.DEFECTO.musica and Ajustes.disparo_auto == Ajustes.DEFECTO.disparo_auto, "#47: --reiniciar deja las opciones de fábrica")
+	_ok(Controles.a.obtener("esquivar", "teclado", 1) == "key:L", "#47: --reiniciar deja las teclas de fábrica")
+	Ajustes.musica = musica
+	Ajustes.disparo_auto = auto
 
 
 ## M02: lo del fondo que va delante de una estación es un recorte exacto del fondo, en su lugar, y tapa a alguna estación.
