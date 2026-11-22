@@ -51,7 +51,7 @@ Casi todo el juego se arma por código: hay **una sola escena** (`escenas/princi
 | Archivo | Por qué choca | Cómo evitarlo |
 |---|---|---|
 | `nucleo/catalogo_*.gd` | Todo el contenido y el balance vive ahí | Avisar en el Issue qué entradas tocas. Los cambios de balance van en un PR aparte del código |
-| `pruebas/pruebas.gd` | Todos agregan pruebas ahí | Cada uno agrega lo suyo en **su propia función**. No renumeres pasos ajenos. Partirlo es la tarea R01 |
+| `pruebas/pruebas_*.gd` | Todos agregan pruebas | Desde R01 están partidas por área (ver `arquitectura.md`). Cada uno agrega lo suyo en **su propia función**, en el módulo de su área. No renumeres pasos ajenos. `_tests()` sigue siendo una lista compartida: si chocan ahí, se conservan ambas líneas |
 | `combate/combate.gd`, `combate/arsenal.gd` | Muy grandes | Avisar qué parte tocas. Partirlos son las tareas R02 y R03 |
 
 Regla: **en el Issue se dice qué archivos se van a tocar.** Si dos Issues tocan el mismo archivo grande, se hacen uno después del otro.

@@ -114,7 +114,7 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
   - los archivos compartidos (`pruebas.gd`) chocaron.
 - Con git, lo mismo se hace con un Issue por tarea, ramas cortas y PR chicos.
 - Reportar con honestidad qué se probó con personas, qué solo con bots y qué no se probó.
-- **Cada PR que agrega pruebas choca en `pruebas.gd`:** agrega una línea en `_tests()` y una función en el mismo lugar. En la sesión del 2026-11-22 chocaron 15 pares de PR. Se resuelve fácil, conservando ambas, pero pasa siempre: por eso R01 (partir `pruebas.gd`) va primero.
+- **Cada PR que agrega pruebas choca en `pruebas.gd`:** agrega una línea en `_tests()` y una función en el mismo lugar. En la sesión del 2026-11-22 chocaron 15 pares de PR. Se resuelve fácil, conservando ambas, pero pasa siempre: por eso R01 (partir `pruebas.gd`) va primero. **Desde R01** las pruebas están en módulos por área (`pruebas_armas.gd`, `pruebas_reglas.gd`, `pruebas_menus.gd`...), y solo la lista de `_tests()` se sigue compartiendo.
 - **Una segunda revisión encuentra lo que las pruebas no ven.** Una auditoría de solo lectura, hecha por la otra persona o por un agente revisor, encontró bugs reales en 4 de 8 PR que pasaban todas las pruebas.
 
 ## Fusionar varios PR a la vez
@@ -132,4 +132,5 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
 | 2026-11-22 | Pruebas que pasaban sin probar el arreglo (M14, M15, M16): se corrigieron tras la auditoría | `juego/pruebas/pruebas.gd` |
 | 2026-11-22 | `flujo` con ventana falló al azar después de pasar: entraban teclas reales del PC y `pruebas_ajustes.cfg` se compartía entre corridas. Sin ventana, el teclado pasa. Ver #47 | `herramientas/probar.sh`, `juego/pruebas/pruebas.gd` |
 | 2026-11-22 | Al volcar los catálogos con `--script`, los autoloads reescribieron `partida3_1.json`, `global3.json` y `ajustes.cfg` reales (sin pérdida: era la conversión automática). Ahora el volcado exige `--pruebas --guardado=volcado` | `herramientas/volcar_catalogos.gd` |
+| 2026-11-22 | R01: `pruebas.gd` (4.892 líneas) partido en 7 archivos encadenados con `extends`, sin cambiar una línea de lógica; mismos números en `tests`, `flujo`, `flujo_hangar` y el bot con semilla | `juego/pruebas/` |
 | 2026-11-22 | `flujo` con ventana fallaba al azar (teclas reales del PC y `pruebas_ajustes.cfg` compartido). Arreglado en el #47: recorridos sin ventana, mouse de prueba con la transformación real y opciones de prueba con prefijo | `herramientas/probar.sh`, `juego/pruebas/pruebas.gd`, `juego/nucleo/ajustes.gd` |
