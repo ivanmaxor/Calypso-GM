@@ -1,7 +1,9 @@
 extends SceneTree
 ## Vuelca los catálogos del juego a un JSON, para generar memorias/inventario.md sin copiar números a mano.
 ## Uso (desde la carpeta juego/):
-##   <godot> --headless --path . --script ../herramientas/volcar_catalogos.gd -- <salida.json>
+##   <godot> --headless --path . --script ../herramientas/volcar_catalogos.gd -- <salida.json> --pruebas --guardado=volcado
+## OJO: --pruebas --guardado=volcado es obligatorio. Con --script Godot igual carga los autoloads, y sin esos argumentos
+## Partida y Ajustes leen y REESCRIBEN las partidas reales de user:// (incluida la conversión automática de una partida antigua).
 ## Después: python herramientas/inventario.py <salida.json> memorias/inventario.md
 
 

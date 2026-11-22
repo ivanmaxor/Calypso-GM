@@ -21,6 +21,15 @@ La más reciente arriba. Cada entrada: fecha, **quién**, qué se hizo, archivos
 - `flujo_hangar` 189 de 189;
 - bot en 1-3: gana 2 de 2.
 
+**Incidente menor**
+- Al volcar los catálogos, los autoloads reescribieron las partidas reales de la PC de Iván (`partida3_1.json`, `global3.json`, `ajustes.cfg`). Sin pérdida: la ranura 1 quedó con la conversión automática de la partida antigua, que no se tocó. La herramienta ahora exige `--pruebas --guardado=volcado` (ver `aprendizajes.md`).
+
+**Publicado**
+- Repo: https://github.com/ivanmaxor/Calypso-GM, con `main` protegido (PR + 1 aprobación, sin force push ni borrado).
+- Release `v0.3.0` con `Calypso-v0.3.0-windows.zip`. El `.exe` se exportó desde el repo y pasó 615 de 615 pasos de menú.
+- Issues #1 a #23 (M01-M18, R01-R03, I01-I02) en el hito "v0.4: Pulido y balance".
+- Commits: `d214b60`, `0856615`, `8c6b27a`, `bd48afd` (tag `v0.3.0`).
+
 **Pendientes**
 - Agregar a Alexander como colaborador.
 - Empezar la v0.4 por R01 (partir `pruebas.gd`) y M10-M13 (balance).

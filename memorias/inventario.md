@@ -253,7 +253,7 @@ Multiplicadores sobre Normal: `hp` y `dano` de los enemigos, `vel` de sus balas,
 
 ```bash
 cd juego
-<godot> --headless --path . --script ../herramientas/volcar_catalogos.gd -- ../build/catalogos.json
+<godot> --headless --path . --script ../herramientas/volcar_catalogos.gd -- ../build/catalogos.json --pruebas --guardado=volcado
 cd ..
 python herramientas/inventario.py build/catalogos.json memorias/inventario.md
 ```
