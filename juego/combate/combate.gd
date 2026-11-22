@@ -3317,9 +3317,10 @@ func dibujar_hud(c: CanvasItem) -> void:
 	if jefe_actual and not jefe_actual.muerto:
 		var e := jefe_actual
 		var col_jefe: Color = UI.C_ROSA if e.super_jefe else UI.C_ROJO
-		var an_nom := UI.ancho(e.nombre)
-		c.draw_rect(Rect2(PX + 2, 14, an_nom + 8, 14), Color("0d0a18"))
-		c.draw_rect(Rect2(PX + 2, 14, 2, 14), col_jefe)
+		# ancho entero: la placa y la barra caen en píxeles lógicos enteros. Alto 15, para la cola de la "g"
+		var an_nom := ceilf(UI.ancho(e.nombre))
+		c.draw_rect(Rect2(PX + 2, 14, an_nom + 8, 15), Color("0d0a18"))
+		c.draw_rect(Rect2(PX + 2, 14, 2, 15), col_jefe)
 		UI.t(c, PX + 7, 13, e.nombre, Color.WHITE)
 		var bx0: float = PX + an_nom + 12
 		var ban: float = PX + ANCHO - 3 - bx0
