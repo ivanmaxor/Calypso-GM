@@ -3362,16 +3362,22 @@ func dibujar_hud(c: CanvasItem) -> void:
 		if (nivel_flash / 4) % 2 == 0:
 			c.draw_rect(Rect2(PX + 1, 1, ANCHO - 2, 11), Color(1, 1, 1, 0.75))
 		UI.tc(c, PX + ANCHO / 2.0, -2, "¡NIVEL %d!" % nivel_carta, UI.C_ORO, 1, true)
-	# barra de jefe
+	# barra de jefe: el nombre va a la izquierda en su placa y la barra sigue al lado, sin taparla (M08).
+	# Queda entre la barra de XP (y < 13) y la pista del nivel (y >= 34)
 	if jefe_actual and not jefe_actual.muerto:
 		var e := jefe_actual
-		var bx0 := PX + 30
-		var ban := int(ANCHO) - 60
+		var col_jefe: Color = UI.C_ROSA if e.super_jefe else UI.C_ROJO
+		# ancho entero: la placa y la barra caen en píxeles lógicos enteros. Alto 15, para la cola de la "g"
+		var an_nom := ceilf(UI.ancho(e.nombre))
+		c.draw_rect(Rect2(PX + 2, 14, an_nom + 8, 15), Color("0d0a18"))
+		c.draw_rect(Rect2(PX + 2, 14, 2, 15), col_jefe)
+		UI.t(c, PX + 7, 13, e.nombre, Color.WHITE)
+		var bx0: float = PX + an_nom + 12
+		var ban: float = PX + ANCHO - 3 - bx0
 		c.draw_rect(Rect2(bx0, 16, ban, 10), Color("0d0a18"))
-		c.draw_rect(Rect2(bx0 + 1, 17, (ban - 2) * clampf(e.hp / e.hpmax, 0.0, 1.0), 8), UI.C_ROSA if e.super_jefe else UI.C_ROJO)
+		c.draw_rect(Rect2(bx0 + 1, 17, (ban - 2) * clampf(e.hp / e.hpmax, 0.0, 1.0), 8), col_jefe)
 		for f in e.def.get("fases", []):
-			c.draw_rect(Rect2(bx0 + ban * f, 16, 1, 10), Color.WHITE)
-		UI.tc(c, PX + ANCHO / 2.0, 12, e.nombre, Color.WHITE, 1, true)
+			c.draw_rect(Rect2(round(bx0 + ban * f), 16, 1, 10), Color.WHITE)
 
 
 func dibujar_cartas(c: CanvasItem) -> void:
