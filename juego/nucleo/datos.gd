@@ -39,7 +39,7 @@ const NOMBRE_STAT := {
 
 # --- los mapas: dónde está cada nivel --------------------------------------------------------
 const NODOS := {"1-1": Vector2(70, 282), "1-2": Vector2(178, 226), "1-3": Vector2(288, 280), "1-4": Vector2(398, 204), "1-5": Vector2(516, 266), "1-6": Vector2(628, 210), "1-7": Vector2(740, 274), "1-8": Vector2(872, 208),
-	"1-R": Vector2(462, 314), "1-INF": Vector2(944, 124)}
+	"1-R": Vector2(420, 314), "1-INF": Vector2(952, 120)}
 const PORTAL := Vector2(984, 240)
 const ORDEN_NIVELES := ["1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7", "1-8"]
 ## Niveles fuera del camino principal: se abren al terminar "requiere".
