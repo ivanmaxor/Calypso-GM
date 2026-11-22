@@ -41,7 +41,22 @@ memorias/                   memoria viva del proyecto (este archivo y los demás
 | `Controles` | `nucleo/controles.gd` (+ `asignaciones.gd`) | Teclas principales y secundarias y mando. Se guardan como datos simples y se reconstruyen al abrir |
 | `Partida` | `nucleo/partida.gd` | Ranuras de partida, dificultad, NG+, inventario, equipo, fusión, mascotas, desafíos, Arsenal, botín y migración de partidas antiguas |
 | `Sonido` | `nucleo/sonido.gd` | Efectos, música con rotación y fundidos, música de jefe, voces y volumen |
-| `Pruebas` | `pruebas/pruebas.gd` | Solo se activa con `--pruebas`. Sin ese argumento no hace nada |
+| `Pruebas` | `pruebas/pruebas.gd` (+ los módulos de abajo) | Solo se activa con `--pruebas`. Sin ese argumento no hace nada |
+
+### Las pruebas, por módulos
+`Pruebas` es una cadena de scripts: cada uno hereda (`extends`) del anterior, así que todos comparten el mismo estado y las mismas herramientas. Un script solo puede llamar funciones suyas o de los de **más arriba** en la cadena (Godot lo revisa al compilar).
+
+| Archivo | Qué tiene |
+|---|---|
+| `pruebas/pruebas_base.gd` | Estado compartido y herramientas: teclas, clics (`_raton`), esperas, fotos, `_ok` y `_check`, preparar un combate o una partida |
+| `pruebas/pruebas_armas.gd` | `--tests` de las armas: medición de cada arma y los `_test_*` de mecánicas propias |
+| `pruebas/pruebas_reglas.gd` | `--tests` del resto: teclas, partida, datos, combate, interfaz. `_tests()` llama todo en orden |
+| `pruebas/pruebas_bot.gd` | `--bot` y `--campana`: el bot, la presión en pantalla, los resúmenes y `--auto` |
+| `pruebas/pruebas_menus.gd` | `--flujo`: los menús con teclas, mando y mouse |
+| `pruebas/pruebas_hangar.gd` | `--flujo_hangar` y `--demo_arsenal` |
+| `pruebas/pruebas.gd` | El autoload: lee los argumentos, prepara la partida y reparte a cada módulo |
+
+Si una función nueva se necesita en dos módulos, va en `pruebas_base.gd`.
 
 ## Catálogos: el contenido es dato
 
@@ -134,13 +149,13 @@ Luego se llaman `Partida.registrar(res)`, `completar_nivel` (si ganó), `generar
 - Script en `pantallas/` que hace `theme = UI.tema()`.
 - Se come la entrada si es una capa encima, y Esc va por `_unhandled_input`.
 - Vecinos de foco explícitos: tiene que funcionar solo con teclado y solo con mouse.
-- Se agrega su recorrido en `pruebas.gd`.
+- Se agrega su recorrido en `pruebas_menus.gd` (o en `pruebas_hangar.gd` si es del Hangar).
 
 ## Reglas de modularidad
 
 1. El contenido nuevo va en los catálogos, no repartido en el código.
 2. Las balas no son nodos. Nada que exista por cientos va como nodo.
 3. Toda animación usa el delta (`_process(delta)`) o la física fija; nunca "un cuadro = un paso" en `_process`.
-4. Un archivo nuevo antes que agrandar uno gigante. **Pendiente para la v0.4:** partir `pruebas.gd` (~4.400 líneas), `combate.gd` (~3.400) y `arsenal.gd` (~1.400), que son los puntos de choque cuando dos personas trabajan a la vez.
+4. Un archivo nuevo antes que agrandar uno gigante. **Pendiente para la v0.4:** partir `combate.gd` (~3.400 líneas) y `arsenal.gd` (~1.400), que son los puntos de choque cuando dos personas trabajan a la vez. `pruebas.gd` ya está partido (R01).
 5. Las interfaces entre sistemas (las de arriba) se acuerdan antes de programar y se documentan aquí.
 6. Los textos se dibujan con `UI.t`, `UI.tc` y `UI.parrafo`, y se miden con `UI.ancho` y `UI.partir` para no cortarse.
