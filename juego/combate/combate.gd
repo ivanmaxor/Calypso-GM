@@ -594,6 +594,11 @@ func hitbox() -> float:
 	return HITBOX * maxf(stats.hitbox_mult, 0.4)
 
 
+## El indicador de la hitbox se ve entero al ir en foco o en Desync. Jugando normal queda discreto (M01).
+func hitbox_destacada() -> bool:
+	return foco or estado == "desync"
+
+
 func _tick_jugador() -> void:
 	if not vivo:
 		return
@@ -2958,12 +2963,18 @@ func dibujar_frente(c: CanvasItem) -> void:
 	if vivo and fogonazo > 1:
 		c.draw_rect(Rect2(round(jx) - 2, round(jy) - 20, 4, 4), Color(1, 1, 0.8))
 	if vivo:
-		# el punto debil siempre se ve, y es del tamaño real de lo que te puede pegar
+		# el punto debil siempre se ve, del tamaño real de lo que te puede pegar. Entero en foco o Desync;
+		# jugando normal, solo el contorno y el centro, para que no parezca una bala pegada a la nave (M01)
 		var pos := Vector2(round(jx), round(jy))
 		var hb := hitbox()
-		c.draw_circle(pos, hb + 1.0, Color("0d0a18"))
-		c.draw_circle(pos, hb, Color("ff6fb5"))
-		c.draw_circle(pos, maxf(hb * 0.4, 1.0), Color.WHITE)
+		if hitbox_destacada():
+			c.draw_circle(pos, hb + 1.0, Color("0d0a18"))
+			c.draw_circle(pos, hb, Color("ff6fb5"))
+			c.draw_circle(pos, maxf(hb * 0.4, 1.0), Color.WHITE)
+		else:
+			c.draw_arc(pos, hb, 0.0, TAU, 16, Color(Color("ff6fb5"), 0.7), 1.0)
+			c.draw_circle(pos, 1.5, Color("0d0a18"))
+			c.draw_circle(pos, 1.0, Color.WHITE)
 		if foco:
 			var n := 16
 			for k in n:

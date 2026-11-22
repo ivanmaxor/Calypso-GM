@@ -66,7 +66,7 @@ Sobre el tiempo: `generar_v3_iconos.py` tarda unos 3 minutos y `generar_v3_escen
 | Balas enemigas | Rojas, rosadas o naranjas. **Rojas en todos los niveles** |
 | Tus balas | Cian |
 | XP (Bits) | Dorados, en rombo |
-| Hitbox del jugador | Punto rosado `#ff6fb5` del tamaño real de lo que te puede pegar, con centro blanco |
+| Hitbox del jugador | Siempre del tamaño real de lo que te puede pegar. Jugando normal, solo un aro rosado `#ff6fb5` fino y semitransparente con un centro blanco chico, para que no parezca una bala pegada a la nave (M01). En foco o Desync, el punto rosado entero con centro blanco |
 
 En la v0.2, dos jugadores confundieron la XP con balas en el 1-1, porque ahí las balas tenían otro color. Por eso desde la v0.3 son rojas siempre.
 

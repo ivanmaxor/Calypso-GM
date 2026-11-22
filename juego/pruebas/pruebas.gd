@@ -12,6 +12,7 @@ extends Node
 ##   --nave=id                                    nave que se usa
 ##   --armas=a,b  --habs=a,b  --evo               parte el combate con eso puesto
 ##   --bot  --torpe                               juega solo, bien o mal
+##   --foco                                       el bot juega con el foco apretado (para mirar la hitbox en capturas)
 ##   --quieto                                     bot que no se mueve ni esquiva nunca
 ##   --ciego                                      bot que persigue enemigos y elige bien las cartas, pero jamás esquiva
 ##   --generar=1-8                                arma con Partida.generar_para la partida de quien viene llegando a ese nivel
@@ -518,6 +519,8 @@ func _bot_combate(c) -> void:
 		if c.ticks % reaccion == 0:
 			_decidir(c)
 		_aplicar_dir()
+		if args.has("foco"):
+			Input.action_press("foco")
 		if dash_pendiente and c.dash_cd <= 0 and dash_suelto:
 			Input.action_press("esquivar")
 			dash_pendiente = false
@@ -2980,6 +2983,7 @@ func _tests() -> void:
 	_tests_datos()
 	_tests_combate()
 	_tests_armas()
+	_tests_hitbox_indicador()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
 
@@ -4362,4 +4366,24 @@ func _test_balas_rotas() -> void:
 		c.arsenal.tick()
 	_ok(c.tiros.size() <= c.MAX_TIROS, "con el tope lleno no entran más balas")
 	c.tiros.clear()
+	c.queue_free()
+
+
+## M01: el indicador de la hitbox queda discreto jugando normal y se ve entero en foco o Desync.
+## La hitbox real no cambia: es regla de juego.
+func _tests_hitbox_indicador() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.estado = "jugando"
+	c.foco = false
+	_ok(not c.hitbox_destacada(), "jugando normal, la hitbox se ve discreta")
+	c.foco = true
+	_ok(c.hitbox_destacada(), "en foco, la hitbox se ve entera")
+	c.foco = false
+	c.estado = "desync"
+	_ok(c.hitbox_destacada(), "en Desync, la hitbox se ve entera")
+	_ok(is_equal_approx(c.hitbox(), 3.5), "el indicador no cambia el tamaño real de la hitbox")
 	c.queue_free()
