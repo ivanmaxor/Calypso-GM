@@ -1,0 +1,45 @@
+Música del juego, tema por tema. Licencia leída el 2026-11-02 en la página de cada obra.
+Archivo: licencia; IA generada; página de la obra.
+
+TEMAS CALMADOS
+Música de HoliznaCC0 (Free Music Archive). Licencia indicada en cada página:
+ruby_1: CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/holiznacc0/ruby-chiptunes/ruby-1/
+ruby_2: CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/holiznacc0/ruby-chiptunes/ruby-2/
+ruby_3: CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/holiznacc0/ruby-chiptunes/ruby-3/
+ruby_4: CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/holiznacc0/ruby-chiptunes/ruby-4/
+ruby_5: CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/holiznacc0/ruby-chiptunes/ruby-5/
+amethyst_1: CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/holiznacc0/amethyst-chiptunes/amethyst-1/
+amethyst_2: CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/holiznacc0/amethyst-chiptunes/amethyst-2/
+amethyst_3: CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/holiznacc0/amethyst-chiptunes/amethyst-3/
+amethyst_4: CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/holiznacc0/amethyst-chiptunes/amethyst-4/
+amethyst_5: CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/holiznacc0/amethyst-chiptunes/amethyst-5/
+
+TEMAS MOVIDOS
+Música de Komiku y Loyalty Freak Music (el mismo autor). Bajada de su propio sitio, loyaltyfreakmusic.com, que marca cada
+álbum como CC-0. Los zip traen además "Licence CC0.txt", que dice: uso libre, también comercial y sin atribución; lo único
+que pide es no privatizarla (por ejemplo, registrarla en Content ID). La página de cada tema en Free Music Archive confirma
+CC0 uno por uno. Recodificados a MP3 VBR de unos 160 kbps.
+up_jump_and_shoot ("Level 1 : Jump and shoot stuff 101", Komiku): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Komiku/ULTRA_PERSON_VOL1/Komiku_-_ULTRA_PERSON_VOL1_-_02_Level_1_-_Jump_and_shoot_stuff_101/ ; álbum: https://loyaltyfreakmusic.com/music/ultra-person-vol1/
+up_coming_to_the_city ("Level 2 : Coming to the city", Komiku): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Komiku/ULTRA_PERSON_VOL1/Komiku_-_ULTRA_PERSON_VOL1_-_05_Level_2_-_Coming_to_the_city/ ; álbum: https://loyaltyfreakmusic.com/music/ultra-person-vol1/
+up_run_on_the_expressway ("Level 3 : Run on the expressway", Komiku): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Komiku/ULTRA_PERSON_VOL1/Komiku_-_ULTRA_PERSON_VOL1_-_10_Level_3_-_Run_on_the_expressway/ ; álbum: https://loyaltyfreakmusic.com/music/ultra-person-vol1/
+up_first_infiltration ("Level 4 : First infiltration in Unresponsible Tech", Komiku): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Komiku/ULTRA_PERSON_VOL2/Komiku_-_ULTRA_PERSON_VOL2_-_01_Level_4_-_First_infiltration_in_Unresponsible_Tech/ ; álbum: https://loyaltyfreakmusic.com/music/ultra-person-vol2/
+up_time_for_retribution ("Level 5 : Time for retribution", Komiku): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Komiku/ULTRA_PERSON_VOL2/Komiku_-_ULTRA_PERSON_VOL2_-_03_Level_5_-_Time_for_retribution/ ; álbum: https://loyaltyfreakmusic.com/music/ultra-person-vol2/
+up_second_strike ("Level 6 : Second strike", Komiku): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Komiku/ULTRA_PERSON_VOL2/Komiku_-_ULTRA_PERSON_VOL2_-_06_Level_6_-_Second_strike/ ; álbum: https://loyaltyfreakmusic.com/music/ultra-person-vol2/
+up_finally_together ("Level 10 : Finally together", Komiku): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Komiku/ULTRA_PERSON_VOL4/Komiku_-_ULTRA_PERSON_VOL4_-_01_Level_10_-_Finally_together/ ; álbum: https://loyaltyfreakmusic.com/music/ultra-person-vol-4/
+up_high_risk ("Level 11 : High risk infiltration", Komiku): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Komiku/ULTRA_PERSON_VOL4/Komiku_-_ULTRA_PERSON_VOL4_-_05_Level_11_-_High_risk_infiltration/ ; álbum: https://loyaltyfreakmusic.com/music/ultra-person-vol-4/
+adv_200_segundos ("You have 200 seconds to escape", Komiku): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Komiku/Its_time_for_adventure__vol_5/Komiku_-_Its_time_for_adventure_vol_5_-_03_You_have_200_seconds_to_escape/ ; álbum: https://loyaltyfreakmusic.com/music/its-time-for-adventure-vol-5/
+lfm_mega_metal ("MEGA METAL", Loyalty Freak Music): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Loyalty_Freak_Music/HYPER_METAL_/Loyalty_Freak_Music_-_HYPER_METAL__-_03_MEGA_METAL/ ; álbum: https://loyaltyfreakmusic.com/music/hyper-metal/
+kart_punk_rock ("Punk Rock Circuit", Komiku): CC0 1.0 Universal (indicada en la página del álbum; no está en Free Music Archive); IA generada: la página no lo dice; https://loyaltyfreakmusic.com/music/incredible-kart-game/
+kart_metal ("Metal Circuit", Komiku): CC0 1.0 Universal (indicada en la página del álbum; no está en Free Music Archive); IA generada: la página no lo dice; https://loyaltyfreakmusic.com/music/incredible-kart-game/
+
+TEMAS DE JEFE
+Música de Scott Buckley: Creative Commons Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/), según la página de
+cada tema. Pide crédito con estas palabras exactas, que van también en CREDITOS.txt. Cambios hechos: recortados para partir
+donde ya está intenso, con fundidos cortos en los cortes, y recodificados a MP3 VBR de unos 160 kbps.
+jefe_goliath: 'Goliath' by Scott Buckley - released under CC-BY 4.0. www.scottbuckley.com.au ; https://www.scottbuckley.com.au/library/goliath/ ; recorte de 0:48 a 3:28
+jefe_simulacra: 'Simulacra' by Scott Buckley - released under CC-BY 4.0. www.scottbuckley.com.au ; https://www.scottbuckley.com.au/library/simulacra/ ; recorte desde 0:52 hasta el final
+jefe_legionnaire: 'Legionnaire (Original)' by Scott Buckley - released under CC-BY 4.0. www.scottbuckley.com.au ; https://www.scottbuckley.com.au/library/legionnaire/ ; recorte desde 0:12 hasta el final
+jefe_forja: 'Song Of The Forge' by Scott Buckley - released under CC-BY 4.0. www.scottbuckley.com.au ; https://www.scottbuckley.com.au/library/song-of-the-forge/ ; recorte de 0:56 a 3:17
+Y dos de Komiku, con lo dicho arriba sobre su licencia:
+jefe_last_boss ("Last Boss : Let's see what we got", Komiku): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Komiku/ULTRA_PERSON_VOL4/Komiku_-_ULTRA_PERSON_VOL4_-_07_Last_Boss_-_Lets_what_we_got/ ; álbum: https://loyaltyfreakmusic.com/music/ultra-person-vol-4/
+jefe_swoop ("Boss 6 : Swoop attack", Komiku): CC0 1.0 Universal; IA generada: No; https://freemusicarchive.org/music/Komiku/ULTRA_PERSON_VOL4/Komiku_-_ULTRA_PERSON_VOL4_-_03_Boss_6_-_Swoop_attack/ ; álbum: https://loyaltyfreakmusic.com/music/ultra-person-vol-4/

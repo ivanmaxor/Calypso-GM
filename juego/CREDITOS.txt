@@ -1,0 +1,15 @@
+Calypso v2
+
+Música (detalle por tema en audio/musica/LICENCIAS_MUSICA.txt):
+HoliznaCC0, álbumes Ruby y Amethyst (Free Music Archive). Licencia CC0 1.0.
+Komiku y Loyalty Freak Music, álbumes ULTRA PERSON, Incredible Kart Game, It's time for adventure vol 5 y HYPER METAL ! (loyaltyfreakmusic.com). Licencia CC0 1.0.
+Temas de jefe, recortados y recodificados para el juego, con licencia Creative Commons Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/):
+'Goliath' by Scott Buckley - released under CC-BY 4.0. www.scottbuckley.com.au
+'Simulacra' by Scott Buckley - released under CC-BY 4.0. www.scottbuckley.com.au
+'Legionnaire (Original)' by Scott Buckley - released under CC-BY 4.0. www.scottbuckley.com.au
+'Song Of The Forge' by Scott Buckley - released under CC-BY 4.0. www.scottbuckley.com.au
+
+Motor: Godot Engine (licencia MIT). El aviso de licencia completo, con sus componentes de terceros, va en LICENCIAS_GODOT.txt.
+Arte, efectos de sonido y código: generados para este proyecto.
+Letra: Barlow Semi Condensed, de The Barlow Project Authors (Google Fonts). Licencia SIL Open Font License 1.1 (arte/fuente/OFL_Barlow.txt).
+Logo: Jersey 10, de The Soft Type Project Authors (Google Fonts). Licencia SIL Open Font License 1.1 (arte/fuente/OFL_Jersey10.txt).
