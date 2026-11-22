@@ -387,7 +387,7 @@ func _ready() -> void:
 	idx_nivel = int(nivel.get("indice", maxi(Datos.ORDEN_NIVELES.find(nivel_id), 0)))
 	mult_vel = mods.vel * (1.0 + idx_nivel * 0.035)
 	presupuesto = nivel.presupuesto + ciclo * 10
-	director = Director.new(nivel, randi())
+	director = Director.new(nivel, randi(), mods.ritmo, mods.inicio)
 	if modo_nivel != "infinito":
 		guion = director.guion()
 	hp = stats.hp
@@ -1403,7 +1403,7 @@ func _mult_vel_tiempo() -> float:
 
 ## Cada tantos segundos, los bots en pantalla disparan a la vez: hay que moverse.
 func _tick_salva(esc: float) -> void:
-	var s: float = nivel.salva
+	var s: float = float(nivel.salva) * float(mods.get("salva", 1.0))
 	if s <= 0.0:
 		return
 	salva_t -= esc / 60.0
@@ -1482,6 +1482,8 @@ func _crear_enemigo(p: Dictionary) -> Enemigo:
 				e.mult_cd = 0.72
 				e.tinte = Color(1.0, 0.55, 0.95)
 				e.nombre = "SÚPER GRÚA"
+			# en Difícil los jefes atacan más seguido (M12); su vida y el tope de daño no cambian por esto
+			e.mult_cd *= float(mods.get("jefe_cd", 1.0))
 	enemigos.append(e)
 	return e
 
@@ -1582,8 +1584,9 @@ func _ia(e: Enemigo, esc: float) -> void:
 			e.cd -= esc
 			if e.cd <= 0:
 				e.cd = float(e.def.disparo) * randf_range(0.85, 1.25) * nivel.agresion * mult_disparo
-				# al empezar el nivel aún no tienes con qué responder: disparan menos
-				var ganas: float = clampf(0.35 + guion_t / 60.0, 0.35, 1.0)
+				# al empezar el nivel aún no tienes con qué responder: disparan menos (en Difícil, menos poco)
+				var ganas0: float = mods.get("ganas", 0.35)
+				var ganas: float = clampf(ganas0 + guion_t / 60.0, ganas0, 1.0)
 				if e.y > 0 and e.y < 250 and e.disparos < (1 if idx_nivel < 2 else 2) and randf() < ganas:
 					e.disparos += 1
 					# a partir de la Grúa, algunos apuntan adonde vas: seguir derecho ya no salva
@@ -1796,7 +1799,7 @@ func _ia_compactador(e: Enemigo, esc: float) -> void:
 					_bala(e.x, quij, cos(a) * 1.25 * mult_vel, sin(a) * 1.25 * mult_vel, B_ORBE, 0, e.id, true)
 			e.cd2 -= esc
 			if e.cd2 <= 0:
-				e.cd2 = 240.0
+				e.cd2 = 240.0 * e.mult_cd
 				pendientes.append({"t": 0.0, "tipo": "rabioso", "ancla": [60, 120]})
 				pendientes.append({"t": 0.4, "tipo": "rabioso", "ancla": [340, 120]})
 				_apuntado(e.x, quij, 1.6, 5, 40.0, B_GRANDE, e.id, 0.5)

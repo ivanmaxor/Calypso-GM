@@ -68,7 +68,7 @@ Todo el contenido y casi todo el balance viven en clases estáticas (`class_name
   - **Las balas enemigas no son nodos ni objetos:** viven en arreglos paralelos (`bx`, `by`, `bvx`, `bvy`…) y se dibujan en lote. Topes: `MAX_BALAS` 1200 enemigas y `MAX_TIROS` 140 propias.
   - Estados: jugando, desync, reconectando, cascada, cartas, pausa, muerte y victoria.
   - Al terminar emite `terminado(res)`.
-- **`combate/director.gd`** arma el **guion** de oleadas: cada enemigo cuesta puntos (`COSTO`) y el ritmo (`ritmo(t)`) sube y respira en olas. Los `hitos` del catálogo son fijos (presentar enemigos y jefes). Usa un generador propio: **la misma semilla da el mismo guion**. `tramo()` alimenta el Modo Infinito.
+- **`combate/director.gd`** arma el **guion** de oleadas: cada enemigo cuesta puntos (`COSTO`) y el ritmo (`ritmo(t)`) sube y respira en olas. Los `hitos` del catálogo son fijos (presentar enemigos y jefes). Usa un generador propio: **la misma semilla da el mismo guion**. `tramo()` alimenta el Modo Infinito. La dificultad le pasa `ritmo` e `inicio` (`Director.new(nivel, semilla, ritmo, inicio)`, desde `Partida.mods_enemigos()`): en Difícil hay más enemigos a la vez y desde el comienzo.
 - **`combate/arsenal.gd`** implementa los tipos de arma y sus evoluciones. Todo objeto propio de un arma (escudos, minas, torretas, tornados…) vive y se dibuja aquí.
 
 ### Contrato combate ↔ armas
