@@ -3821,6 +3821,26 @@ func _tests_armas_contratos() -> void:
 	_test_estadisticas()
 	_test_balas_rotas()
 	_test_textos_armas()
+	_test_rayo_decae()
+
+
+## M11: cada salto del Reportado pega menos que el anterior, y contra un solo blanco no cambia nada.
+func _test_rayo_decae() -> void:
+	var c = _combate_prueba("rayo", 1, false)
+	c.stats.crit = 0.0
+	var bs := []
+	for k in 3:
+		bs.append(_blanco_prueba(c, "bot", 200.0 + k * 30.0, 220.0 - k * 10.0))
+	for k in 90:
+		c.ticks += 1
+		c.arsenal.tick()
+	var golpes := []
+	for e in bs:
+		golpes.append(1e9 - e.hp)
+	_ok(golpes[0] > 0.0 and golpes[1] > 0.0 and golpes[2] > 0.0, "el rayo salta a los tres")
+	_ok(golpes[1] < golpes[0] and golpes[2] < golpes[1], "cada salto del rayo pega menos: %s" % str(golpes))
+	_ok(absf(golpes[1] / golpes[0] - (1.0 - float(Datos.ARMAS.rayo.base.decae))) < 0.01, "el rayo pierde lo que dice el catálogo por salto")
+	c.queue_free()
 
 
 ## Cada texto tiene que caber en una carta: 116 de ancho y 5 líneas como máximo.
