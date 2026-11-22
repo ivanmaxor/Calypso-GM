@@ -71,7 +71,7 @@ bash herramientas/probar.sh cap <carpeta_absoluta> 60,300 --pantalla=hangar --sa
 
 `tests`, `flujo`, `flujo_hangar`, `bot` y `campana` corren **sin ventana**, así que puedes seguir usando el PC (o jugar) mientras corren. Solo `cap` y los recorridos con carpeta de capturas abren una ventana, **fuera de la pantalla**. Usan sus propios guardados, opciones y teclas, sin tocar los tuyos. Con `CALYPSO_P=<prefijo>` dos pruebas a la vez no se pisan. Más detalles en [memorias/aprendizajes.md](memorias/aprendizajes.md).
 
-**Generadores de arte y audio** (opcional): necesitan Python 3 con `numpy` y `pillow` (`pip install numpy pillow`). Ver [memorias/guia-arte.md](memorias/guia-arte.md).
+**Generadores de arte y audio** (opcional): necesitan Python 3 con `numpy` y `pillow` (`pip install numpy pillow`). Ver [memorias/guia-arte.md](memorias/guia-arte.md). Después de regenerar, `python herramientas/arte/png_sin_cambios.py --restaurar` deja fuera del commit los PNG que solo cambiaron en bytes.
 
 ---
 

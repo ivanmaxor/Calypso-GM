@@ -17,6 +17,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(os.path.dirname(AQUI))  # herramientas/arte -> raíz del repo
+CAPTURA_MAPA = os.path.join(REPO, "docs", "capturas", "mapa.png")  # el fondo del montaje de Don Tuerca
 sys.path.insert(0, AQUI)
 from fuente_v1 import glifo
 from sdf import (CONTORNO, Rampa, _escena_mat, _normal, a_imagen, capsula, caja, cilindro, cono_truncado, elipsoide, esfera, hex2rgb,
@@ -1673,7 +1675,10 @@ def montaje_sala(foco, ruta):
 
 def montaje_tuerca(ruta):
     """Don Tuerca como lo dibuja dialogo.gd: abajo a la izquierda, sobre la pantalla oscurecida."""
-    base = Image.open(os.path.join(os.path.dirname(JUEGO.rstrip("/\\")), "capturas", "mapa.png")).convert("RGBA").resize((640, 360), Image.NEAREST)
+    if not os.path.exists(CAPTURA_MAPA):
+        print("  sin", CAPTURA_MAPA, "-> me salto el montaje de Don Tuerca")
+        return
+    base = Image.open(CAPTURA_MAPA).convert("RGBA").resize((640, 360), Image.NEAREST)
     hoja = _sprite("retrato_tuerca")
     cuadros = [hoja.crop((i * 128, 0, (i + 1) * 128, 128)) for i in range(4)]
     velo = Image.new("RGBA", (640, 360), (5, 3, 13, 140))

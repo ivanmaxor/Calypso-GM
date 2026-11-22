@@ -102,7 +102,7 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
   - recarga el PATH con `$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')`, o cierra todas las terminales;
   - en Git Bash funciona con la ruta completa `"/c/Program Files/GitHub CLI/gh.exe"`.
 - **PowerShell 5.1 se come las comillas dobles internas** de `gh api user --jq '"\(.id)+\(.login)@users.noreply.github.com"'`. Saca los valores por separado (`--jq .id` y `--jq .login`) o usa Git Bash.
-- **Pillow y PNG "byte a byte":** según la versión de Pillow, un generador puede dar los mismos píxeles con bytes distintos. Para saber si un PNG cambió de verdad, compara píxeles, no hashes.
+- **Pillow y PNG "byte a byte":** según la versión de Pillow, un generador puede dar los mismos píxeles con bytes distintos. Para saber si un PNG cambió de verdad, compara píxeles, no hashes: `python herramientas/arte/png_sin_cambios.py` (con `--restaurar` deja fuera del commit los que solo cambiaron en bytes).
 - `.claude/` (las copias de trabajo de Claude Code) va en `.git/info/exclude` de cada PC, no en el `.gitignore` del repo.
 - Exportar falla si el `.exe` está abierto o si la carpeta de salida está abierta en otro programa.
 - Rutas con espacios (`Calypso GM`): siempre entre comillas.
@@ -117,6 +117,12 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
 - **Cada PR que agrega pruebas choca en `pruebas.gd`:** agrega una línea en `_tests()` y una función en el mismo lugar. En la sesión del 2026-11-22 chocaron 15 pares de PR. Se resuelve fácil, conservando ambas, pero pasa siempre: por eso R01 (partir `pruebas.gd`) va primero. **Desde R01** las pruebas están en módulos por área (`pruebas_armas.gd`, `pruebas_reglas.gd`, `pruebas_menus.gd`...), y solo la lista de `_tests()` se sigue compartiendo.
 - **Una segunda revisión encuentra lo que las pruebas no ven.** Una auditoría de solo lectura, hecha por la otra persona o por un agente revisor, encontró bugs reales en 4 de 8 PR que pasaban todas las pruebas.
 
+## Fusionar varios PR a la vez
+- **Primero se integran todos en una rama local** (en el orden acordado) y se corre la batería completa. Recién ahí se fusionan en GitHub. Así se prueba la combinación, no cada PR por separado.
+- `git merge -X diff-algorithm=patience` separa mejor las funciones nuevas que dos PR agregan en el mismo lugar. El choque típico es en `_tests()` de `pruebas.gd`: se conservan ambas líneas.
+- **Un PR apilado sobre otro** (base = la rama del otro) se retargetea a `main` antes de fusionar el de abajo. Si al fusionar GitHub dice que falta aprobación aunque ya se aprobó, es que la regla anuló la aprobación al cambiar la base: `gh pr update-branch <n>`, aprobar de nuevo y fusionar.
+- Fusionar de a uno deja las pruebas nuevas de `_tests()` en otro orden que la integración local. Hay que volver a correr `tests` sobre el `main` final.
+
 ## Registro
 
 | Fecha | Qué pasó | Dónde |
@@ -124,6 +130,7 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
 | 2026-11-22 | `probar.sh` tenía rutas absolutas y el motor escrito a mano: ahora calcula su ubicación y usa `GODOT` o el PATH | `herramientas/probar.sh` |
 | 2026-11-22 | Godot reescribe `project.godot` al correr las pruebas: no se commitea | `juego/project.godot` |
 | 2026-11-22 | Pruebas que pasaban sin probar el arreglo (M14, M15, M16): se corrigieron tras la auditoría | `juego/pruebas/pruebas.gd` |
+| 2026-11-22 | `flujo` con ventana falló al azar después de pasar: entraban teclas reales del PC y `pruebas_ajustes.cfg` se compartía entre corridas. Sin ventana, el teclado pasa. Ver #47 | `herramientas/probar.sh`, `juego/pruebas/pruebas.gd` |
 | 2026-11-22 | Al volcar los catálogos con `--script`, los autoloads reescribieron `partida3_1.json`, `global3.json` y `ajustes.cfg` reales (sin pérdida: era la conversión automática). Ahora el volcado exige `--pruebas --guardado=volcado` | `herramientas/volcar_catalogos.gd` |
 | 2026-11-22 | R01: `pruebas.gd` (4.892 líneas) partido en 7 archivos encadenados con `extends`, sin cambiar una línea de lógica; mismos números en `tests`, `flujo`, `flujo_hangar` y el bot con semilla | `juego/pruebas/` |
 | 2026-11-22 | `flujo` con ventana fallaba al azar (teclas reales del PC y `pruebas_ajustes.cfg` compartido). Arreglado en el #47: recorridos sin ventana, mouse de prueba con la transformación real y opciones de prueba con prefijo | `herramientas/probar.sh`, `juego/pruebas/pruebas.gd`, `juego/nucleo/ajustes.gd` |

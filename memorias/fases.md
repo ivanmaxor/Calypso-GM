@@ -36,6 +36,8 @@ Una fase grande se puede escribir como contrato, siguiendo el modelo de `docs/hi
 
 ## 🔨 En curso: v0.4 (Pulido y balance)
 
+**Estado (2026-11-22):** M01 a M18 implementados y fusionados (salvo la elección de letra, #34). En prueba con personas con la versión `v0.4.0-rc.1`, siguiendo la guía del Issue #44.
+
 Observaciones de una prueba real con jugadores. **Prioridad sugerida:** 🔴 alta · 🟡 media · 🟢 baja. Cada punto es un Issue.
 
 ### Arte y escenario
