@@ -3197,10 +3197,10 @@ func dibujar_hud(c: CanvasItem) -> void:
 	c.draw_rect(rv, Color("0d0a18"))
 	c.draw_rect(Rect2(rv.position + Vector2.ONE, Vector2((rv.size.x - 2) * clampf(hp_visto / stats.hp, 0.0, 1.0), rv.size.y - 2)), Color.WHITE)
 	c.draw_rect(Rect2(rv.position + Vector2.ONE, Vector2((rv.size.x - 2) * frac, rv.size.y - 2)), col_hp if hp_flash % 2 == 0 else UI.C_ROJO)
-	UI.t(c, 5, 30, "ARMAS %d/%d" % [arsenal.armas.size(), Partida.max_armas()], UI.C_CIAN)
+	UI.t(c, 5, 31, "ARMAS %d/%d" % [arsenal.armas.size(), Partida.max_armas()], UI.C_CIAN)
 	for i in Datos.TOPE_ARMAS:
 		var x := 8.0 + (i % 2) * 54.0
-		var y := 44.0 + (i / 2) * 42.0
+		var y := 48.0 + (i / 2) * 42.0
 		if i < arsenal.armas.size():
 			var a = arsenal.armas[i]
 			_ranura_arma(c, x, y, a.id, a.nivel, Datos.NIVEL_MAX_CARTA, a.evo)
@@ -3208,11 +3208,11 @@ func dibujar_hud(c: CanvasItem) -> void:
 			_ranura_arma(c, x, y, "", 0, 0, false)
 		else:
 			_ranura_cerrada(c, x, y)
-	UI.t(c, 5, 128, "HABILIDADES %d/%d" % [habs.size(), Partida.max_habs()], UI.C_VERDE)
+	UI.t(c, 5, 133, "HABILIDADES %d/%d" % [habs.size(), Partida.max_habs()], UI.C_VERDE)
 	var ids: Array = habs.keys()
 	for i in Datos.TOPE_HABS:
 		var x := 8.0 + (i % 2) * 54.0
-		var y := 142.0 + (i / 2) * 42.0
+		var y := 150.0 + (i / 2) * 42.0
 		if i < ids.size():
 			_ranura_arma(c, x, y, ids[i], habs[ids[i]], Datos.max_hab(ids[i]), false)
 		elif i < Partida.max_habs():
@@ -3220,7 +3220,7 @@ func dibujar_hud(c: CanvasItem) -> void:
 		else:
 			_ranura_cerrada(c, x, y)
 	# desync y esquiva, abajo
-	var y0 := 230
+	var y0 := 240
 	if tiene_desync:
 		var listo := barra >= 100.0 and estado == "jugando"
 		var en_uso := estado == "desync"
@@ -3239,7 +3239,8 @@ func dibujar_hud(c: CanvasItem) -> void:
 		y0 += 48
 	else:
 		UI.t(c, 5, y0, "DESYNC", Color("3a3458"))
-		c.draw_texture(Datos.tex("ui_candado"), Vector2(48, y0 + 2))
+		# el candado va después del texto medido, con aire, y no pegado a la "C"
+		c.draw_texture(Datos.tex("ui_candado"), Vector2(5 + UI.ancho("DESYNC") + 5, y0 + 2))
 		y0 += 24
 	var listo_d := dash_cd <= 0
 	UI.t(c, 5, y0, "ESQUIVA  " + Controles.texto("esquivar"), UI.C_TEXTO if listo_d else UI.C_GRIS)
