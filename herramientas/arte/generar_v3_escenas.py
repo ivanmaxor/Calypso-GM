@@ -4,7 +4,8 @@
 Uso: python generar_v3_escenas.py <carpeta juego> [filtro] [--montajes=<carpeta>]
 
 filtro: parte del nombre de lo que se quiere generar (retrato_tuerca, hangar_fondo, hangar_obj_naves,
-bala_pellet). Sin filtro se genera todo.
+bala_pellet). Sin filtro se genera todo. hangar_fondo tambien escribe los hangar_delante_<id>: lo del fondo
+que queda delante de una estacion y que el juego dibuja despues de ellas.
 """
 import math
 import os
@@ -1182,17 +1183,19 @@ SOPAPO = (-0.60, 1.26)
 
 
 def e_utileria():
-    """Lo que va pegado a la pieza: lamparas, cañerias, ducha, cortina y demas. Lista de (escena, caja)."""
+    """Lo que va pegado a la pieza: lamparas, cañerias, ducha, cortina y demas. Lista de (escena, caja, delante).
+    delante: None, o el id del sprite hangar_delante_<id> que lo repite encima de las estaciones (ver DELANTE)."""
     piezas = []
 
     # --- lamparas colgando ---
-    for lx, ly, lz in LAMPARAS:
+    for i, (lx, ly, lz) in enumerate(LAMPARAS):
         def lampara(p, lx=lx, ly=ly, lz=lz):
             q = p - _V(lx, ly, lz)
             return [(capsula(q, (0, 0.16, 0), (0, 0.60, 0), 0.006), M_NEGRO),
                     (resta(cono_truncado(q, (0, 0.18, 0), (0, 0.02, 0), 0.05, 0.20), cono_truncado(q, (0, 0.14, 0), (0, 0.0, 0), 0.03, 0.18)), M_VERDE),
                     (esfera(q, (0, -0.012, 0), 0.062), M_AMPOLLETA)]
-        piezas.append((lampara, ((lx - 0.24, ly - 0.06, lz - 0.24), (lx + 0.24, 2.70, lz + 0.24))))
+        # la de la derecha cuelga delante del tablon de encargos
+        piezas.append((lampara, ((lx - 0.24, ly - 0.06, lz - 0.24), (lx + 0.24, 2.70, lz + 0.24)), "lampara" if i == 1 else None))
 
     # --- cañerias: la de cobre y la de fierro, por el fondo y el costado ---
     def cañerias(p):
@@ -1212,14 +1215,14 @@ def e_utileria():
         ds.append((cilindro(p, (EXC_X, 2.28, 0.10), (EXC_X, 2.28, 0.19), 0.018), M_ACERO))
         ds.append((toro(p, (EXC_X, 2.28, 0.19), (0, 0, 1), 0.07, 0.016), M_ROJO))
         return ds
-    piezas.append((cañerias, ((-3.0, 0.0, 0.0), (3.0, 2.70, 2.6))))
+    piezas.append((cañerias, ((-3.0, 0.0, 0.0), (3.0, 2.70, 2.6)), None))
 
     # --- la ducha, sobre la nave ---
     def ducha(p):
         return [(tubo(p, [(0, 1.56, 0.0), (0, 1.62, 0.14), (0, 1.74, 0.30)], 0.028), M_ACERO),
                 (cono_truncado(p, (0, 1.76, 0.30), (0, 1.62, 0.36), 0.04, 0.15), M_ACERO),
                 (cilindro(p, (0, 1.63, 0.36), (0, 1.60, 0.37), 0.15), M_ACERO2)]
-    piezas.append((ducha, ((-0.2, 1.5, 0.0), (0.2, 1.8, 0.5))))
+    piezas.append((ducha, ((-0.2, 1.5, 0.0), (0.2, 1.8, 0.5)), None))
 
     # --- repisa de la ducha: shampoo, jabon y aceite de motor ---
     def repisa(p):
@@ -1232,7 +1235,7 @@ def e_utileria():
               (cilindro(q, (0.15, 0.012, 0.10), (0.15, 0.17, 0.10), 0.045), M_VERDE),
               (cilindro(q, (0.15, 0.17, 0.10), (0.15, 0.21, 0.10), 0.016), M_PAPEL)]
         return ds
-    piezas.append((repisa, ((0.1, 1.15, 0.0), (0.7, 1.52, 0.24))))
+    piezas.append((repisa, ((0.1, 1.15, 0.0), (0.7, 1.52, 0.24)), None))
 
     # --- caja de herramientas roja, tirada en el piso ---
     hx, hz = 2.46, 2.28
@@ -1247,7 +1250,7 @@ def e_utileria():
                 (capsula(q, (-0.07, 0.235, 0), (0.07, 0.235, 0), 0.012), M_ACERO),
                 (capsula(q, (-0.07, 0.20, 0), (-0.07, 0.235, 0), 0.012), M_ACERO),
                 (capsula(q, (0.07, 0.20, 0), (0.07, 0.235, 0), 0.012), M_ACERO)]
-    piezas.append((caja_herr, ((hx - 0.26, -0.01, hz - 0.15), (hx + 0.26, 0.26, hz + 0.15))))
+    piezas.append((caja_herr, ((hx - 0.26, -0.01, hz - 0.15), (hx + 0.26, 0.26, hz + 0.15)), "herramientas"))
 
     # --- barra y cortina de ducha, corrida a un lado ---
     def cortina(p):
@@ -1258,7 +1261,7 @@ def e_utileria():
         lado = caja(p, (0.82, 0.98, 0.50), (0.15, 0.82, 0.05), 0.02) + pliegue
         ds.append((lado, M_CORTINA))
         return ds
-    piezas.append((cortina, ((-1.0, 0.1, 0.0), (1.02, 1.86, 0.62))))
+    piezas.append((cortina, ((-1.0, 0.1, 0.0), (1.02, 1.86, 0.62)), None))
 
     # --- caja de emergencia con el sopapo ---
     cx, cy = SOPAPO
@@ -1270,7 +1273,7 @@ def e_utileria():
               (capsula(q, (0.03, 0.25, 0.095), (-0.04, -0.14, 0.095), 0.02), M_MADERA),
               (elipsoide(rot_z(q - _V(-0.05, -0.14, 0.095), -0.18), (0, 0, 0), (0.155, 0.095, 0.02)), M_ROJO)]
         return ds
-    piezas.append((sopapo, ((cx - 0.34, cy - 0.38, 0.0), (cx + 0.34, cy + 0.38, 0.14))))
+    piezas.append((sopapo, ((cx - 0.34, cy - 0.38, 0.0), (cx + 0.34, cy + 0.38, 0.14)), None))
 
     # --- balde bajo el sifon: el lavamanos gotea ---
     bx, bz = ARS_L - 0.36, 0.36
@@ -1280,7 +1283,7 @@ def e_utileria():
         cuerpo = resta(cono_truncado(q, (0, 0.0, 0), (0, 0.32, 0), 0.13, 0.18), cono_truncado(q, (0, 0.05, 0), (0, 0.36, 0), 0.11, 0.165))
         return [(cuerpo, M_CORTINA), (cilindro(q, (0, 0.04, 0), (0, 0.22, 0), 0.15), M_CIAN),
                 (toro(q, (0, 0.32, 0), (0, 1, 0), 0.178, 0.012), M_ACERO)]
-    piezas.append((balde, ((bx - 0.22, -0.01, bz - 0.22), (bx + 0.22, 0.38, bz + 0.22))))
+    piezas.append((balde, ((bx - 0.22, -0.01, bz - 0.22), (bx + 0.22, 0.38, bz + 0.22)), None))
 
     # --- letrero de piso mojado, porque ser prevenido es gratis ---
     mx, mz = -0.98, 2.00
@@ -1290,7 +1293,7 @@ def e_utileria():
         a1 = rot_x(q - _V(0, 0, 0.09), 0.16)
         a2 = rot_x(q - _V(0, 0, -0.09), -0.16)
         return [(caja(a1, (0, 0.27, 0), (0.18, 0.27, 0.012), 0.008), M_AMARILLO), (caja(a2, (0, 0.27, 0), (0.18, 0.27, 0.012), 0.008), M_AMARILLO)]
-    piezas.append((letrero, ((mx - 0.24, -0.01, mz - 0.22), (mx + 0.24, 0.58, mz + 0.22))))
+    piezas.append((letrero, ((mx - 0.24, -0.01, mz - 0.22), (mx + 0.24, 0.58, mz + 0.22)), "piso_mojado"))
 
     # --- torre de rollos de confort, junto al locker ---
     rx, rz = -1.86, 2.02
@@ -1302,7 +1305,7 @@ def e_utileria():
             y = 0.075 + k * 0.15
             ds.append((resta(cilindro(q, (dx, y - 0.07, dz), (dx, y + 0.07, dz), 0.105), cilindro(q, (dx, y - 0.2, dz), (dx, y + 0.2, dz), 0.03)), M_PAPEL))
         return ds
-    piezas.append((rollos, ((rx - 0.16, -0.01, rz - 0.16), (rx + 0.16, 0.48, rz + 0.16))))
+    piezas.append((rollos, ((rx - 0.16, -0.01, rz - 0.16), (rx + 0.16, 0.48, rz + 0.16)), "rollos"))
     return piezas
 
 
@@ -1426,11 +1429,18 @@ def resplandor(a, x, y, radio, tinte, fuerza, chato=1.0):
 
 
 def componer_fondo():
+    """Devuelve el fondo (RGB) y lo que va delante de las estaciones: {id: (rgba, x, y)}.
+    Lo de delante se recorta del fondo ya terminado, asi trae las mismas luces y letras y calza pixel a pixel."""
     rgb, sup, P, luz = sala_cruda()
     lienzo = Image.fromarray(rgb, "RGB").convert("RGBA")
-    for esc, lim in e_utileria():
+    mascaras = {}
+    for esc, lim, delante in e_utileria():
         arr, x0, y0 = render_objeto(esc, RS, lim, ss=2, sombra=False, luz_base=0.12)
         lienzo.alpha_composite(Image.fromarray(arr, "RGBA"), (x0, y0))
+        if delante:
+            m_ = np.zeros((360, 640), bool)
+            m_[y0:y0 + arr.shape[0], x0:x0 + arr.shape[1]] = arr[..., 3] > 0
+            mascaras[delante] = m_
     a = np.array(lienzo.convert("RGB"))
     # luces de color: dan la pista de dónde están las cosas importantes
     bx, by = proyectar(EXC_X, 0.55, 1.1)
@@ -1458,7 +1468,17 @@ def componer_fondo():
     px_, py_ = proyectar(0, 0.02, PLATO_Z)
     resplandor(a, px_, py_ + 6, 118, "#0c3a4a", 0.8, 0.46)
     pintar_utileria(a)
-    return a
+    delante = {}
+    for k, m_ in mascaras.items():
+        m_[:26] = False  # la franja de la barra de estaciones no se tapa
+        ys, xs = np.where(m_)
+        y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+        recorte = np.zeros((y1 - y0, x1 - x0, 4), dtype=np.uint8)
+        dentro = m_[y0:y1, x0:x1]
+        recorte[dentro, :3] = a[y0:y1, x0:x1][dentro]
+        recorte[dentro, 3] = 255
+        delante[k] = (recorte, int(x0), int(y0))
+    return a, delante
 
 
 # =============================================================================
@@ -1477,6 +1497,13 @@ def leer_posiciones():
     """Donde quedo cada objeto: sale de sala_hangar.gd, asi regenerar uno no pierde los demas."""
     texto = open(SALA_GD, encoding="utf-8").read()
     return {k: (int(float(x)), int(float(y))) for k, x, y in re.findall(r'"(\w+)": \{"r": Rect2\(([\d.]+), ([\d.]+),', texto)}
+
+
+def leer_delante():
+    """Donde va cada sprite hangar_delante_<id>, segun la lista DELANTE de sala_hangar.gd."""
+    texto = open(SALA_GD, encoding="utf-8").read()
+    bloque = re.search(r"const DELANTE := \{[^}]*\}", texto).group(0)
+    return {k: (int(float(x)), int(float(y))) for k, x, y in re.findall(r'"(\w+)": Rect2\(([\d.]+), ([\d.]+),', bloque)}
 
 
 def publicar_posiciones(rects):
@@ -1506,9 +1533,24 @@ for nombre, f in OBJETOS_SALA.items():
 if rects_nuevos or quiere("hangar"):
     publicar_posiciones(rects_nuevos)
 
-if quiere("hangar_fondo"):
-    Image.fromarray(componer_fondo(), "RGB").save(os.path.join(DEST, "hangar_fondo.png"))
+def publicar_delante(delante):
+    """Reescribe en sala_hangar.gd la lista DELANTE: id y rectangulo de cada sprite hangar_delante_<id>."""
+    texto = open(SALA_GD, encoding="utf-8", newline="").read()
+    filas = "".join(f'\t"{k}": Rect2({x}, {y}, {arr.shape[1]}, {arr.shape[0]}),\n' for k, (arr, x, y) in delante.items())
+    texto, n = re.subn(r"const DELANTE := \{[^}]*\}", lambda m_: "const DELANTE := {\n" + filas + "}", texto)
+    assert n == 1, "falta const DELANTE en sala_hangar.gd"
+    open(SALA_GD, "w", encoding="utf-8", newline="").write(texto)
+
+
+# el fondo y lo que va delante de las estaciones salen juntos: lo de delante es un recorte del fondo
+if quiere("hangar_fondo") or quiere("hangar_delante"):
+    fondo, delante = componer_fondo()
+    Image.fromarray(fondo, "RGB").save(os.path.join(DEST, "hangar_fondo.png"))
     print("hangar_fondo listo")
+    for k, (arr, x, y) in delante.items():
+        guardar("hangar_delante_" + k, arr)
+        print(f"hangar_delante_{k}: {arr.shape[1]}x{arr.shape[0]} en ({x},{y})")
+    publicar_delante(delante)
 
 
 # =============================================================================
@@ -1597,6 +1639,9 @@ def montaje_sala(foco, ruta):
     for k in sorted(POS_OBJ, key=lambda k: POS_OBJ[k][1] + tam[k][1]):
         v = 1.0 if (foco == k or not foco) else OSCURO
         lienzo.alpha_composite(_multiplica(_sprite("hangar_obj_" + k), v), POS_OBJ[k])
+    # lo del fondo que va delante de las estaciones, con la luz del fondo
+    for k, (x, y) in leer_delante().items():
+        lienzo.alpha_composite(_multiplica(_sprite("hangar_delante_" + k), b), (x, y))
     v = 1.0 if (foco == "naves" or not foco) else OSCURO
     lienzo.alpha_composite(_multiplica(_nave_pintada(), v), (POS_NAVE[0] - 48, POS_NAVE[1] - 48))
     pet = _sprite("mascota_0")
@@ -1721,6 +1766,26 @@ def revisar_sala():
             cerca = int((dil & mascaras[b_]).sum())
             if cruce or cerca:
                 print(f"  {a_} y {b_}: {cruce} pixeles encimados, {cerca} a menos de 4 px")
+    # lo de delante: tiene que ser igual al fondo donde esta, y tapar algo de una estacion (si no, sobra)
+    fondo = np.array(_sprite("hangar_fondo"))
+    for k, (x, y) in leer_delante().items():
+        a = np.array(_sprite("hangar_delante_" + k))
+        al = a[..., 3]
+        if not np.isin(al, (0, 255)).all() or y < 26 or x < 0 or x + a.shape[1] > 640 or y + a.shape[0] > 360:
+            print("  delante mal hecho o fuera de lugar:", k)
+            malos += 1
+            continue
+        lleno = al > 0
+        if (a[..., :3][lleno] != fondo[y:y + a.shape[0], x:x + a.shape[1], :3][lleno]).any():
+            print("  delante no calza con el fondo:", k)
+            malos += 1
+        m_ = np.zeros((360, 640), bool)
+        m_[y:y + a.shape[0], x:x + a.shape[1]] = lleno
+        tapa = {e: int((m_ & mascaras[e]).sum()) for e in mascaras if (m_ & mascaras[e]).any()}
+        if not tapa:
+            print("  delante no tapa ninguna estacion:", k)
+            malos += 1
+        print(f"  delante {k}: va encima de", ", ".join(f"{e} ({n} px)" for e, n in tapa.items()))
     print("revision de la sala:", "ok" if not malos else f"{malos} problemas")
 
 
