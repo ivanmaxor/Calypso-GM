@@ -87,7 +87,7 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
   - Más enemigos con menos disparos cada uno se siente mejor que pocos enemigos que disparan mucho.
 - **La dificultad no llegaba al director de oleadas** (hasta #42): Difícil solo subía la vida y el daño, así que traía los mismos enemigos que Normal y casi las mismas balas. Además, con el jefe en pantalla había *menos* balas en Difícil, porque sus balas, más rápidas, salían antes de la pantalla. Subir vida y daño no pone más cosas en pantalla: la presión se mide con enemigos y balas en pantalla (#33).
 - **Meta de daño por segundo de un arma** (Ataque 12, contra un blanco): 35-45 en nivel 1, 90-120 en nivel 5 y 150-220 evolucionada. Las de área o defensa, menos contra un blanco. Se mide con `--tests --medir_armas`.
-- **Mejoras de piezas:** con un 4 % de la base por nivel y la ficha redondeando a entero, parecía que "no sube" (M13). Ahora cada nivel suma un 8 % (`Partida.MEJORA_POR_NIVEL`), la ficha muestra un decimal y "Al mejorar: …" antes de pagar. Una prueba revisa que cada nivel de cada pieza cambie algún número visible: con 4 % fallaba en 5 piezas.
+- **Mejoras de piezas:** con un 4 % de la base por nivel y la ficha redondeando a entero, parecía que "no sube" (M13). Con un 8 % (#40), la ficha mostrando un decimal y "Al mejorar: …" antes de pagar, ya cambiaban todos los números. Una prueba revisa que cada nivel de cada pieza cambie algún número visible (en Difícil, la mejora más chica): con 4 % fallaba en 5 piezas. Con 8 % en todas, fuera de Difícil igual se notaba poco (#61): la propuesta, a decidir por Iván, es que dependa de la dificultad (Fácil 12 %, Normal 10 %, Difícil 8 %, en `CatalogoProgreso.MEJORA_POR_NIVEL`).
 
 ## Entorno Windows
 

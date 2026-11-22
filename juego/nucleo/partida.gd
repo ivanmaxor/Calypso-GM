@@ -1008,14 +1008,16 @@ func _sumar(s: Dictionary, mods: Dictionary, factor := 1.0) -> void:
 		s[k] = s.get(k, 0) + mods[k] * factor
 
 
-## Cuánto sube cada nivel de mejora, sobre la base de la pieza. Con 4 % la Mira subía 0,08 de ataque
-## por nivel y varios niveles no cambiaban ningún número visible (M13); con 8 % todos cambian.
-const MEJORA_POR_NIVEL := 0.08
+## Cuánto sube cada nivel de mejora, sobre la base de la pieza, en la dificultad de esta partida (#61).
+## Los números están en CatalogoProgreso.MEJORA_POR_NIVEL; la ficha y "Al mejorar" salen de stats_item.
+func mejora_por_nivel() -> float:
+	var t: Dictionary = CatalogoProgreso.MEJORA_POR_NIVEL
+	return t.get(d.dificultad, t.dificil)
 
 
 func stats_item(it: Dictionary) -> Dictionary:
 	var r := {}
-	var f: float = Datos.RAREZAS[it.rareza].mult * (1.0 + MEJORA_POR_NIVEL * (it.nivel - 1))
+	var f: float = Datos.RAREZAS[it.rareza].mult * (1.0 + mejora_por_nivel() * (it.nivel - 1))
 	_sumar(r, def_de(it).base, f)
 	return r
 
