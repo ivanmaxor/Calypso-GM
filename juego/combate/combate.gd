@@ -1372,7 +1372,7 @@ func _mult_vel_tiempo() -> float:
 
 ## Cada tantos segundos, los bots en pantalla disparan a la vez: hay que moverse.
 func _tick_salva(esc: float) -> void:
-	var s: float = nivel.salva
+	var s: float = float(nivel.salva) * float(mods.get("salva", 1.0))
 	if s <= 0.0:
 		return
 	salva_t -= esc / 60.0

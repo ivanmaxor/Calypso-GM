@@ -3347,14 +3347,15 @@ func _tests_presion_dificultad() -> void:
 	var orden := ["facil", "normal", "dificil", "extremo"]
 	for i in orden.size():
 		var di: Dictionary = Datos.DIFICULTADES[orden[i]]
-		for k in ["ritmo", "inicio", "ganas", "jefe_cd"]:
+		for k in ["ritmo", "inicio", "ganas", "salva", "jefe_cd"]:
 			_ok(di.has(k), "la dificultad %s define %s" % [orden[i], k])
 		if i > 0:
 			var antes: Dictionary = Datos.DIFICULTADES[orden[i - 1]]
 			_ok(float(di.ritmo) >= float(antes.ritmo) and float(di.inicio) >= float(antes.inicio) and float(di.ganas) >= float(antes.ganas), "%s aprieta al menos como %s" % [orden[i], orden[i - 1]])
+			_ok(float(di.salva) <= float(antes.salva), "las salvas de %s llegan al menos tan seguido como en %s" % [orden[i], orden[i - 1]])
 			_ok(float(di.jefe_cd) <= float(antes.jefe_cd), "los jefes de %s atacan al menos tan seguido como en %s" % [orden[i], orden[i - 1]])
 	var normal: Dictionary = Datos.DIFICULTADES["normal"]
-	_ok(float(normal.ritmo) == 1.0 and float(normal.inicio) == 1.0 and float(normal.jefe_cd) == 1.0, "Normal no cambia la presión")
+	_ok(float(normal.ritmo) == 1.0 and float(normal.inicio) == 1.0 and float(normal.salva) == 1.0 and float(normal.jefe_cd) == 1.0, "Normal no cambia la presión")
 	var dif: Dictionary = Datos.DIFICULTADES["dificil"]
 	for id in ["1-2", "1-6"]:
 		var nv: Dictionary = Datos.NIVELES[id]
