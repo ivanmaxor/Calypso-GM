@@ -112,7 +112,7 @@ Unidades: `cad`, `dur` y similares van en cuadros (60 por segundo). `dmg` se mul
 
 ## Piezas
 
-Cada pieza da su base por rareza (× multiplicador) y suma un 4 % de esa base por nivel de mejora. Las pasivas se abren
+Cada pieza da su base por rareza (× multiplicador) y suma un 8 % de esa base por nivel de mejora. Las pasivas se abren
 según la rareza (`r`: 2 Poco común, 3 Raro, 4 Épico, 5 Legendario).
 
 | id | Ranura | Nombre | Qué hace | Base | Pasivas | Mundo | Empieza a caer |

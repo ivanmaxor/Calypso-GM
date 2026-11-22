@@ -73,7 +73,7 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
   - La Camper mataba al jefe final en 6 s estando quieta: de ahí salieron el AFK y el tope a jefes.
   - Más enemigos con menos disparos cada uno se siente mejor que pocos enemigos que disparan mucho.
 - **Meta de daño por segundo de un arma** (Ataque 12, contra un blanco): 35-45 en nivel 1, 90-120 en nivel 5 y 150-220 evolucionada. Las de área o defensa, menos contra un blanco. Se mide con `--tests --medir_armas`.
-- **Mejoras de piezas:** cada nivel suma solo un 4 % de la base de la pieza, y la pantalla redondea a entero. Por eso parece que "no sube" (M13).
+- **Mejoras de piezas:** con un 4 % de la base por nivel y la ficha redondeando a entero, parecía que "no sube" (M13). Ahora cada nivel suma un 8 % (`Partida.MEJORA_POR_NIVEL`), la ficha muestra un decimal y "Al mejorar: …" antes de pagar. Una prueba revisa que cada nivel de cada pieza cambie algún número visible: con 4 % fallaba en 5 piezas.
 
 ## Entorno Windows
 

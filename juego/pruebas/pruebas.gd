@@ -3628,6 +3628,17 @@ func _tests_mejoras_visibles() -> void:
 			_ok(HE.texto_mejora(it) == "", "al máximo no ofrece mejora: " + id)
 	var turbo := {"id": "motor_turbo", "rareza": 0, "nivel": 1, "uid": -1}
 	_ok(HE.texto_mejora(turbo).begins_with("Al mejorar: -"), "la recarga de esquiva baja al mejorar: " + HE.texto_mejora(turbo))
+	# M13 (balance): con la mejora por nivel actual, cada nivel de cada pieza cambia un número de la ficha
+	for id in Datos.ITEMS:
+		for rareza in [0, 3]:
+			var it2 := {"id": id, "rareza": rareza, "nivel": 1, "uid": -1}
+			var sin_cambio := 0
+			while it2.nivel < Partida.nivel_max(it2):
+				var antes := _textos_stats(Partida.stats_item(it2))
+				it2.nivel += 1
+				if antes == _textos_stats(Partida.stats_item(it2)):
+					sin_cambio += 1
+			_ok(sin_cambio == 0, "cada mejora de %s (rareza %d) cambia un número visible (%d sin cambio)" % [id, rareza, sin_cambio])
 	_ok(PiezaBoton.valor_stat("atk", 2.16) == "+2,2", "un decimal con coma: " + PiezaBoton.valor_stat("atk", 2.16))
 	_ok(PiezaBoton.valor_stat("atk", 3.0) == "+3", "sin ,0 que no aporta")
 	_ok(PiezaBoton.valor_stat("crit", 0.045) == "+4,5 %", "porcentaje con decimal: " + PiezaBoton.valor_stat("crit", 0.045))
