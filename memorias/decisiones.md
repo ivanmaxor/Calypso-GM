@@ -4,6 +4,12 @@ Cada decisión con fecha, qué se decidió, alternativas, por qué y qué implic
 
 ---
 
+### 2026-11-22: Indicador de hitbox discreto, entero en foco y en Desync (M01)
+- **Qué:** jugando normal, la hitbox se ve como un aro rosado fino del tamaño real con un centro chico. Con foco (Shift) o durante el Desync (también al reconectar y en la cascada), se ve el disco entero como antes. La hitbox real no cambia (3,5). Reemplaza el "se ve siempre como un punto rosado" de la v0.3.
+- **Alternativas:** más chico o semitransparente siempre; verse solo en foco; integrarlo a la cabina de cada nave.
+- **Por qué:** los jugadores lo confundían con una bala pegada a la nave (mismo color y forma que las balas enemigas), pero hay que seguir sabiendo dónde pegan.
+- **Implica:** la opacidad del aro (70 %) y si conviene el anillo punteado del foco también en el Desync quedan a decidir por Iván al jugar.
+
 ### 2026-11-22: Repositorio público en GitHub, sin código anterior
 - **Qué:** el juego pasa a un repositorio público (`Calypso-GM`), con `main` protegido y Pull Request obligatorio. Parte limpio, sin historial de otros proyectos. La carpeta local pasa a llamarse `Calypso GM`.
 - **Alternativas:** repo privado; o traer el historial de proyectos anteriores.

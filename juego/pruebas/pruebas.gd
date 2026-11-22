@@ -4386,4 +4386,11 @@ func _tests_hitbox_indicador() -> void:
 	c.estado = "desync"
 	_ok(c.hitbox_destacada(), "en Desync, la hitbox se ve entera")
 	_ok(is_equal_approx(c.hitbox(), 3.5), "el indicador no cambia el tamaño real de la hitbox")
+	for est in ["reconectando", "cascada"]:
+		c.estado = est
+		_ok(c.hitbox_destacada(), "con el filtro del Desync (%s), la hitbox se ve entera" % est)
+	# con la hitbox más chica posible, el centro discreto no tapa el aro
+	c.estado = "jugando"
+	c.stats.hitbox_mult = 0.0
+	_ok(c.centro_hitbox_discreta() <= c.hitbox() - 0.5, "con la hitbox mínima el aro se sigue viendo (%.2f / %.2f)" % [c.centro_hitbox_discreta(), c.hitbox()])
 	c.queue_free()

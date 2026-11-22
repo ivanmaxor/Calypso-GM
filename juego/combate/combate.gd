@@ -594,9 +594,16 @@ func hitbox() -> float:
 	return HITBOX * maxf(stats.hitbox_mult, 0.4)
 
 
-## El indicador de la hitbox se ve entero al ir en foco o en Desync. Jugando normal queda discreto (M01).
+## El indicador de la hitbox se ve entero al ir en foco o mientras dura el efecto del Desync (incluida la
+## reconexión y la cascada). Jugando normal queda discreto (M01).
 func hitbox_destacada() -> bool:
-	return foco or estado == "desync"
+	return foco or estado in ["desync", "reconectando", "cascada"]
+
+
+## Radio del centro del indicador discreto: escala con la hitbox, para que el aro se siga viendo aunque
+## una habilidad la achique.
+func centro_hitbox_discreta() -> float:
+	return minf(1.5, hitbox() * 0.45)
 
 
 func _tick_jugador() -> void:
@@ -2973,8 +2980,9 @@ func dibujar_frente(c: CanvasItem) -> void:
 			c.draw_circle(pos, maxf(hb * 0.4, 1.0), Color.WHITE)
 		else:
 			c.draw_arc(pos, hb, 0.0, TAU, 16, Color(Color("ff6fb5"), 0.7), 1.0)
-			c.draw_circle(pos, 1.5, Color("0d0a18"))
-			c.draw_circle(pos, 1.0, Color.WHITE)
+			var rc := centro_hitbox_discreta()
+			c.draw_circle(pos, rc, Color("0d0a18"))
+			c.draw_circle(pos, rc * 0.66, Color.WHITE)
 		if foco:
 			var n := 16
 			for k in n:
