@@ -147,7 +147,7 @@ func _ready() -> void:
 		Sonido.tocar("desbloqueo", 1.0, -3.0)
 	elif foco_en != "" and nodos.has(foco_en):
 		actual = foco_en
-	ficha_pos = Datos.NODOS[actual] + Vector2(0, -34)
+	ficha_pos = Datos.NODOS[actual] + FICHA
 	ficha_obj = ficha_pos
 	cam = clampf(Datos.NODOS[actual].x - CAMPO_W / 2.0, 0.0, MAPA_W - CAMPO_W)
 	cam_obj = cam
@@ -313,12 +313,18 @@ func _extra_arriba(id: String, a: String, b: String) -> void:
 	x.focus_previous = x.get_path_to(nodos[a])
 
 
+## Dónde se estaciona la nave: a la izquierda del nivel, sobre el camino por donde llegó.
+## Encima del nivel quedaba detrás del recuadro del premio y solo se le veía la llama.
+## (generar_mapa.py usa este mismo valor para no dibujar utilería ahí).
+const FICHA := Vector2(-40, 0)
+
+
 func al_enfocar(n: Nodo) -> void:
 	Sonido.tocar("nodo", 1.0, -6.0)
 	ultimo_foco = n
 	var p: Vector2 = n.position + Vector2(22, 22)
 	if n.id != "portal" and Partida.nivel_abierto(n.id):
-		ficha_obj = p + Vector2(0, -34)
+		ficha_obj = p + FICHA
 	if p.x - cam < 60.0 or p.x - cam > CAMPO_W - 60.0:
 		cam_obj = clampf(p.x - CAMPO_W / 2.0, 0.0, MAPA_W - CAMPO_W)
 
@@ -450,6 +456,9 @@ func _dibujar_campo() -> void:
 		var col := UI.C_ORO if abierto else Color(0.05, 0.04, 0.1, 0.7)
 		for q: Vector2 in curva[i]:
 			var x: float = q.x - cx
+			# el camino llega hasta el portal, pero no se pinta dentro del aro
+			if absf(q.x - Datos.PORTAL.x) < 28.0 and absf(q.y - Datos.PORTAL.y) < 36.0:
+				continue
 			if x > -3 and x < CAMPO_W + 3:
 				campo.draw_rect(Rect2(round(x) - 1, round(q.y) - 1, 3, 3), col)
 	# los niveles extra: punteado en su color cuando se abren
