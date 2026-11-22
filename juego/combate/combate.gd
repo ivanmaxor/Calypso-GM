@@ -3339,9 +3339,29 @@ func dibujar_cartas(c: CanvasItem) -> void:
 	UI.tc(c, PX + ANCHO / 2.0, ty, "%s: cambiar cartas (te quedan %d)" % [Controles.texto("desync"), cambios_restantes], UI.C_TEXTO if cambios_restantes > 0 else Color("6a6488"))
 
 
+## Dónde va cada cosa dentro de una carta. El bloque de sinergia se arma desde abajo, para que
+## nada se salga aunque el nombre ocupe dos líneas o el título no quepa junto al OK (M07).
+func _layout_carta(ca: Dictionary, r: Rect2) -> Dictionary:
+	var l := {"y_pips": r.end.y - 41.0}
+	var y := r.position.y + 84.0 + 13.0 * UI.partir(ca.nombre, r.size.x - 8.0).size() + 2.0
+	l["y_fin_desc"] = y + 13.0 * UI.partir(ca.desc, r.size.x - 10.0).size()
+	if ca.has("sinergia"):
+		var util := r.size.x - 8.0
+		var titulo: String = ca.sin_txt
+		if ca.sin_ok and UI.ancho(titulo) + 4.0 + UI.ancho("¡OK!") > util:
+			titulo = "Evoluciona:"
+		var lineas := UI.partir(ca.sinergia, util - 18.0)
+		l["titulo"] = titulo
+		l["lineas"] = lineas
+		l["y_sin"] = r.end.y - 21.0 - 13.0 * lineas.size()
+		l["y_pips"] = l.y_sin - 7.0
+	return l
+
+
 func _dibujar_carta(c: CanvasItem, i: int) -> void:
 	var r := _rect_carta(i)
 	var ca: Dictionary = cartas[i]
+	var lay := _layout_carta(ca, r)
 	var sel := i == carta_sel
 	var tipo: String = ca.tipo
 	var col := UI.C_GRIS
@@ -3382,13 +3402,16 @@ func _dibujar_carta(c: CanvasItem, i: int) -> void:
 		for k in mx:
 			var xx := cx - w / 2.0 + k * 8
 			var pip := UI.C_ORO if k < ca.nv else (UI.C_TEXTO if k == ca.nv and (ticks / 15) % 2 == 0 else Color("3a3458"))
-			c.draw_rect(Rect2(xx, r.position.y + r.size.y - 41, 6, 5), pip)
+			c.draw_rect(Rect2(xx, lay.y_pips, 6, 5), pip)
 	# sinergia: que se necesita para evolucionar
 	if ca.has("sinergia"):
-		var yy := r.position.y + r.size.y - 34
+		var yy: float = lay.y_sin
 		c.draw_line(Vector2(r.position.x + 3, yy), Vector2(r.end.x - 3, yy), UI.C_LINEA, 1.0)
-		UI.t(c, r.position.x + 4, yy, ca.sin_txt, UI.C_GRIS)
-		c.draw_texture_rect(Datos.tex(ca.sin_icono), Rect2(r.position.x + 4, yy + 15, 16, 16), false)
-		UI.t(c, r.position.x + 22, yy + 14, ca.sinergia, UI.C_VERDE if ca.sin_ok else UI.C_TEXTO)
+		UI.t(c, r.position.x + 4, yy, lay.titulo, UI.C_GRIS)
 		if ca.sin_ok:
-			UI.t(c, r.end.x - 19, yy, "¡OK!", UI.C_VERDE)
+			UI.t(c, r.end.x - 4 - UI.ancho("¡OK!"), yy, "¡OK!", UI.C_VERDE)
+		c.draw_texture_rect(Datos.tex(ca.sin_icono), Rect2(r.position.x + 4, yy + 15, 16, 16), false)
+		var yn := yy + 14
+		for lin in lay.lineas:
+			UI.t(c, r.position.x + 22, yn, lin, UI.C_VERDE if ca.sin_ok else UI.C_TEXTO)
+			yn += 13

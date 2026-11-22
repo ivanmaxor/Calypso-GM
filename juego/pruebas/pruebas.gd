@@ -2979,6 +2979,7 @@ func _tests() -> void:
 	_tests_partida()
 	_tests_datos()
 	_tests_combate()
+	_tests_cartas_caben()
 	_tests_armas()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
@@ -3556,6 +3557,40 @@ func _tests_combate() -> void:
 			if ca.tipo == "hab":
 				_ok(not Datos.HABILIDADES[ca.id].has("requiere"), "nada del Desync sin Desync: " + ca.id)
 			_ok(ca.tipo != "cura2", "la Sopaipilla no sale sin Desync")
+	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M07: en todas las cartas posibles, la sinergia y el OK caben y no se montan sobre la descripción.
+func _tests_cartas_caben() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	var r: Rect2 = c._rect_carta(0)
+	var util := r.size.x - 8.0
+	var cartas := []
+	for id in Datos.ARMAS:
+		for nv in Datos.ARMAS[id].mejoras.size() + 1:
+			cartas.append(c._carta_arma(id, nv))
+	for id in Datos.HABILIDADES:
+		cartas.append(c._carta_hab(id, 0))
+		cartas.append(c._carta_hab(id, 1))
+	for ca in cartas:
+		for ok in [false, true]:
+			if not ca.has("sinergia"):
+				continue
+			ca.sin_ok = ok
+			var l: Dictionary = c._layout_carta(ca, r)
+			var ancho_titulo: float = UI.ancho(l.titulo) + (4.0 + UI.ancho("¡OK!") if ok else 0.0)
+			_ok(ancho_titulo <= util, "el título de sinergia y el OK caben: %s %s" % [ca.nombre, l.titulo])
+			for lin in l.lineas:
+				_ok(UI.ancho(lin) <= util - 18.0, "el nombre de la sinergia cabe: " + lin)
+			_ok(l.y_sin + 14.0 + 13.0 * l.lineas.size() <= r.end.y, "la sinergia no se sale por abajo: " + ca.nombre)
+		var l2: Dictionary = c._layout_carta(ca, r)
+		_ok(l2.y_fin_desc <= l2.y_pips + 2.0, "la descripción no tapa los niveles: %s (%d > %d)" % [ca.nombre, int(l2.y_fin_desc), int(l2.y_pips)])
 	c.queue_free()
 	Partida.nuevo()
 
