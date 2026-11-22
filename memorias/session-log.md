@@ -4,6 +4,40 @@ La más reciente arriba. Cada entrada: fecha, **quién**, qué se hizo, archivos
 
 ---
 
+### 2026-11-22 (tarde): Iván (con Claude Code)
+**Qué se hizo**
+- Se revisaron los 19 PR de Alexander (#25 a #43): código, pruebas, correo privado y sin firmas de IA.
+- **Se fusionaron 18** en el orden de su auditoría. Antes se integraron todos en una rama local y se corrió la batería completa.
+- **El #34 (letras) queda abierto como borrador:** es donde se elige la letra.
+- **Choques resueltos:**
+  - `pruebas.gd`: se conservaron todas las pruebas nuevas;
+  - `combate.gd`: M14 con M08, queda el destello "¡NIVEL N!" y después la placa del jefe.
+- **Versión de prueba `v0.4.0-rc.1`** publicada como *pre-release*.
+- **Issues creados:**
+  - **#44** (fijado): guía de prueba con personas;
+  - **#45**, **#46** y **#47**: herramientas.
+
+**Verificado**
+- Con todo integrado:
+  - `tests` 11.271 de 11.271;
+  - `flujo` 615 de 615 y `flujo_hangar` 189 de 189;
+  - bot bueno en 1-6 Difícil, 3 de 3;
+  - bot torpe en 1-3 Normal, 3 de 3;
+  - `campana` en Normal, 22 de 24 estrellas en 8 intentos (faltó la de cadena de 1-8).
+- `main` fusionado tiene el mismo código del juego. Solo cambia el orden de las pruebas en `pruebas.gd`.
+- El `.exe` de la rc.1: `tests` 11.271 de 11.271, y `flujo` sin ventana 576 de 577 (el paso de mouse necesita ventana).
+
+**Sin verificar**
+- Las corridas **con ventana** posteriores fallaron al azar: entraban teclas reales del PC y había ajustes compartidos entre corridas (#47).
+- Nada se jugó con personas todavía: para eso está la rc.1 y el #44.
+
+**Pendientes**
+- Iván y Alexander juegan la rc.1 con la guía del #44 y comentan ahí.
+- Alexander: #47, después R01 (#19); #45 y #46 cuando pueda.
+- Iván: decidir I01 (#22) e I02 (#23), y la letra (#34) junto con Alexander.
+
+---
+
 ### 2026-11-22: Alexander (con Claude Code)
 **Qué se hizo**
 - Primera sesión de Alexander:
