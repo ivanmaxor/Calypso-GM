@@ -439,6 +439,7 @@ func _contar(res: Dictionary) -> void:
 	suma["kills"] = suma.get("kills", 0) + res.kills
 	suma["nivel"] = suma.get("nivel", 0) + res.nivel
 	suma["cadena"] = suma.get("cadena", 0) + res.max_cadena
+	_cerrar_presion()
 
 
 ## Cuánto dura cada tipo de enemigo desde su primer golpe, en segundos. Entre paréntesis: en el tramo final del nivel.
@@ -468,6 +469,56 @@ func _jefes_txt(res: Dictionary) -> String:
 func _resumen() -> void:
 	var n := maxf(veces, 1.0)
 	print("[bot] fin ganadas=%d de %d | promedio: t=%.0fs golpes=%.1f kills=%.0f nivel=%.1f cadena=%.0f" % [ganadas, veces, suma.get("tiempo", 0) / n, suma.get("golpes", 0) / n, suma.get("kills", 0) / n, suma.get("nivel", 0) / n, suma.get("cadena", 0) / n])
+	_resumen_presion(n)
+
+
+# ---- presión en pantalla: cuántos enemigos y balas enemigas hay mientras se juega (M10) ----
+## Por partida: suma y máximo de enemigos y balas en cada cuadro jugando (sin cartas, pausa ni Desync,
+## que va en cámara lenta), y aparte los primeros 30 s, para ver si hay presión desde el inicio.
+var presion := {}
+## Lo mismo juntando todas las partidas, para el resumen.
+var presion_tot := {}
+const PRESION_INICIO := 30 * 60
+
+
+func _medir_presion(c) -> void:
+	if c.estado != "jugando":
+		return
+	var en := 0
+	for e in c.enemigos:
+		if not e.muerto and e.x > 0.0 and e.x < c.ANCHO and e.y > 0.0 and e.y < c.ALTO:
+			en += 1
+	var b: int = c.bn
+	presion["n"] = presion.get("n", 0) + 1
+	presion["enem"] = presion.get("enem", 0) + en
+	presion["balas"] = presion.get("balas", 0) + b
+	presion["max_enem"] = maxi(presion.get("max_enem", 0), en)
+	presion["max_balas"] = maxi(presion.get("max_balas", 0), b)
+	if presion["n"] <= PRESION_INICIO:
+		presion["enem_ini"] = presion.get("enem_ini", 0) + en
+		presion["balas_ini"] = presion.get("balas_ini", 0) + b
+
+
+## Imprime la presión de la partida que terminó, la suma al total y parte de cero.
+func _cerrar_presion() -> void:
+	var n: float = maxf(presion.get("n", 0), 1.0)
+	var ni: float = minf(n, PRESION_INICIO)
+	var fila := {
+		"enem": presion.get("enem", 0) / n, "balas": presion.get("balas", 0) / n,
+		"max_enem": presion.get("max_enem", 0), "max_balas": presion.get("max_balas", 0),
+		"enem_ini": presion.get("enem_ini", 0) / ni, "balas_ini": presion.get("balas_ini", 0) / ni,
+	}
+	print("      presión: enemigos prom=%.1f max=%d | balas prom=%.1f max=%d | primeros 30 s: enemigos=%.1f balas=%.1f" % [fila.enem, fila.max_enem, fila.balas, fila.max_balas, fila.enem_ini, fila.balas_ini])
+	for k in fila:
+		presion_tot[k] = presion_tot.get(k, 0.0) + float(fila[k])
+	presion_tot["max_max_enem"] = maxf(presion_tot.get("max_max_enem", 0.0), fila.max_enem)
+	presion_tot["max_max_balas"] = maxf(presion_tot.get("max_max_balas", 0.0), fila.max_balas)
+	presion = {}
+
+
+func _resumen_presion(n: float) -> void:
+	var t := presion_tot
+	print("[bot] presión promedio por partida: enemigos prom=%.1f max=%.1f (pico %d) | balas prom=%.1f max=%.1f (pico %d) | primeros 30 s: enemigos=%.1f balas=%.1f" % [t.get("enem", 0.0) / n, t.get("max_enem", 0.0) / n, int(t.get("max_max_enem", 0.0)), t.get("balas", 0.0) / n, t.get("max_balas", 0.0) / n, int(t.get("max_max_balas", 0.0)), t.get("enem_ini", 0.0) / n, t.get("balas_ini", 0.0) / n])
 
 
 func _soltar() -> void:
@@ -479,6 +530,7 @@ func _soltar() -> void:
 
 
 func _bot_combate(c) -> void:
+	_medir_presion(c)
 	if args.has("log") and c.ticks - ultimo_log >= 600:
 		ultimo_log = c.ticks
 		var nombres := PackedStringArray()
