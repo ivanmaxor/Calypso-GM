@@ -175,6 +175,9 @@ func iniciar(p: Node) -> void:
 		Partida.nivel_sel = Partida.nivel_actual()
 		p.ir_combate()
 		return
+	# --letra=<variante>: para comparar letras en capturas (M05)
+	if args.has("letra"):
+		Datos.usar_letra(args.letra)
 	match args.get("pantalla", ""):
 		"mapa":
 			_marcar_vistos()
