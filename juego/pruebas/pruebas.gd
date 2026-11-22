@@ -2979,6 +2979,7 @@ func _tests() -> void:
 	_tests_partida()
 	_tests_datos()
 	_tests_combate()
+	_tests_desafios_silueta()
 	_tests_xp_tras_desync()
 	_tests_cartas_caben()
 	_tests_desync_visual()
@@ -3560,6 +3561,38 @@ func _tests_combate() -> void:
 				_ok(not Datos.HABILIDADES[ca.id].has("requiere"), "nada del Desync sin Desync: " + ca.id)
 			_ok(ca.tipo != "cura2", "la Sopaipilla no sale sin Desync")
 	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M18: en Arsenal → Desafíos, el premio que no has ganado se ve como silueta; el ganado, entero.
+func _tests_desafios_silueta() -> void:
+	Partida.nuevo()
+	var ar = load("res://pantallas/arsenal.gd").new()
+	var tipos := {}
+	for de in Datos.DESAFIOS:
+		tipos[de.premio.tipo] = true
+		var ranura := String(de.premio.tipo).begins_with("ranura")
+		_ok(ar.premio_en_silueta(de) == (not ranura), "sin ganar, el premio de %s se ve en silueta (salvo ranuras)" % de.id)
+	_ok(tipos.has("arma") and tipos.has("hab"), "hay desafíos que dan armas y habilidades")
+	# en las filas de nave, el candado va encima de la nave (la nave es un hijo y taparía el _draw)
+	var filas_nave := 0
+	for de in Datos.DESAFIOS:
+		if de.premio.tipo != "nave" or not Partida.desafio_visible(de):
+			continue
+		var f = ar.Fila.new()
+		f.de = de
+		f.a = ar
+		add_child(f)
+		var hijos: Array = f.get_children()
+		_ok(hijos.size() == 2 and hijos[0] == f.spr and hijos[1] is Sprite2D and hijos[1].texture == Datos.tex("ui_candado"), "el candado tapa a la nave en silueta: " + de.id)
+		f.free()
+		filas_nave += 1
+	print("  filas de nave revisadas: %d" % filas_nave)
+	var de0: Dictionary = Datos.DESAFIOS[0]
+	Partida.d.desafios.append(de0.id)
+	_ok(not ar.premio_en_silueta(de0), "ganado, el premio se ve entero")
+	ar.free()
 	Partida.nuevo()
 
 
