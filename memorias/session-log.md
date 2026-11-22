@@ -4,6 +4,54 @@ La más reciente arriba. Cada entrada: fecha, **quién**, qué se hizo, archivos
 
 ---
 
+### 2026-11-22 (tarde): Alexander (con Claude Code)
+**Qué se hizo** (siguiendo el plan de Iván en el PR #41)
+- Revisé el #48 (registro de Iván). La aprobación la da Alexander desde su cuenta.
+- La rc.1 está descargada para la prueba con personas del #44. **Alexander todavía no la juega**: lo hace en la próxima sesión.
+- Trabajo que no cambia cómo se juega:
+
+  | PR | Issue | Qué hace |
+  |---|---|---|
+  | #49 | #47 | `flujo` y `flujo_hangar` corren sin ventana. El mouse de prueba usa `get_final_transform()`: sin ventana, la ventana mide 64×64 y los clics caían en otro lado. Opciones y teclas de prueba llevan el prefijo de `--guardado`, y `--reiniciar` las deja de fábrica |
+  | #50 | #45 | `generar_v3_escenas --montajes` busca la captura del mapa en `docs/capturas/`, y si falta se salta ese montaje |
+  | #51 | #46 | `png_sin_cambios.py` compara los PNG por píxeles; con `--restaurar` saca del commit los que solo cambiaron en bytes. Fijar la versión de Pillow queda como pregunta para Iván |
+  | #52 | #19 (R01) | `pruebas.gd` partido en 7 archivos encadenados con `extends`, sin cambiar lógica. Es un borrador apilado sobre el #49 |
+
+**Archivos o módulos tocados**
+- `herramientas/probar.sh`, `herramientas/arte/generar_v3_escenas.py`, `herramientas/arte/png_sin_cambios.py` (nuevo).
+- `juego/nucleo/ajustes.gd`, `juego/nucleo/controles.gd`, `juego/pruebas/` (todo).
+- `README.md`, `memorias/aprendizajes.md`, `arquitectura.md`, `guia-arte.md`, `guia-colaboracion.md`.
+
+**Commits**
+- #49 `fdc5ce5`, #50 `212e578`, #51 `88e7295`, #52 `10c79a7`.
+
+**Verificado**
+- #49:
+  - `tests` 11.278 (11.271 + 7 nuevas, que fallan sin el arreglo);
+  - `flujo` 615 y `flujo_hangar` 189, sin ventana dos veces seguidas y con ventana con capturas.
+- #52, igual que el #49:
+  - mismos números en `tests`, `flujo` y `flujo_hangar`;
+  - el bot con semilla da lo mismo;
+  - `campana` da 22 de 24 en 8 intentos;
+  - del archivo viejo faltan 0 líneas y solo se agregaron 21 (los `extends` y las cabeceras).
+- #50 y #51: corridos contra casos armados a propósito, con su falla antes del arreglo.
+- Ningún par de PR abiertos (#48 a #52) choca: comprobado con `git merge-tree`.
+
+**Sin verificar**
+- Nada se jugó todavía con personas.
+
+**Pendientes**
+- Alexander:
+  - aprobar el #48;
+  - jugar la rc.1 en Difícil con la guía del #44 y comentar ahí.
+- Iván:
+  - revisar #49, #50 y #51;
+  - fusionar el #49 antes que el #52;
+  - responder la pregunta de Pillow en el #51.
+- R02 y R03 esperan a la v0.4.0, e I01 e I02 a Iván.
+
+---
+
 ### 2026-11-22 (tarde): Iván (con Claude Code)
 **Qué se hizo**
 - Se revisaron los 19 PR de Alexander (#25 a #43): código, pruebas, correo privado y sin firmas de IA.
