@@ -482,6 +482,7 @@ const PRESION_INICIO := 30 * 60
 
 
 func _medir_presion(c) -> void:
+	_medir_presion_jefe(c)
 	if c.estado != "jugando":
 		return
 	var en := 0
@@ -499,6 +500,33 @@ func _medir_presion(c) -> void:
 		presion["balas_ini"] = presion.get("balas_ini", 0) + b
 
 
+## Mientras hay un jefe en pantalla (M12): cuánto dura la pelea, cuántas balas hay y cuántos golpes recibes.
+func _medir_presion_jefe(c) -> void:
+	if c.jefe_actual == null or c.jefe_actual.muerto:
+		return
+	if not presion.has("jefe_g0"):
+		presion["jefe_g0"] = c.golpes
+	presion["jefe_g1"] = c.golpes
+	if c.estado != "jugando":
+		return
+	presion["jefe_n"] = presion.get("jefe_n", 0) + 1
+	presion["jefe_balas"] = presion.get("jefe_balas", 0) + int(c.bn)
+	presion["jefe_max_balas"] = maxi(presion.get("jefe_max_balas", 0), int(c.bn))
+
+
+func _presion_jefe_txt() -> String:
+	if not presion.has("jefe_g0"):
+		return ""
+	var n: float = maxf(presion.get("jefe_n", 0), 1.0)
+	var golpes: int = int(presion.jefe_g1) - int(presion.jefe_g0)
+	presion_tot["jefes"] = presion_tot.get("jefes", 0.0) + 1.0
+	presion_tot["jefe_seg"] = presion_tot.get("jefe_seg", 0.0) + n / 60.0
+	presion_tot["jefe_balas"] = presion_tot.get("jefe_balas", 0.0) + presion.get("jefe_balas", 0) / n
+	presion_tot["jefe_max_balas"] = presion_tot.get("jefe_max_balas", 0.0) + float(presion.get("jefe_max_balas", 0))
+	presion_tot["jefe_golpes"] = presion_tot.get("jefe_golpes", 0.0) + float(golpes)
+	return " | con jefe: %.0f s jugando, balas prom=%.1f max=%d, golpes=%d" % [n / 60.0, presion.get("jefe_balas", 0) / n, presion.get("jefe_max_balas", 0), golpes]
+
+
 ## Imprime la presión de la partida que terminó, la suma al total y parte de cero.
 func _cerrar_presion() -> void:
 	var n: float = maxf(presion.get("n", 0), 1.0)
@@ -508,7 +536,7 @@ func _cerrar_presion() -> void:
 		"max_enem": presion.get("max_enem", 0), "max_balas": presion.get("max_balas", 0),
 		"enem_ini": presion.get("enem_ini", 0) / ni, "balas_ini": presion.get("balas_ini", 0) / ni,
 	}
-	print("      presión: enemigos prom=%.1f max=%d | balas prom=%.1f max=%d | primeros 30 s: enemigos=%.1f balas=%.1f" % [fila.enem, fila.max_enem, fila.balas, fila.max_balas, fila.enem_ini, fila.balas_ini])
+	print("      presión: enemigos prom=%.1f max=%d | balas prom=%.1f max=%d | primeros 30 s: enemigos=%.1f balas=%.1f" % [fila.enem, fila.max_enem, fila.balas, fila.max_balas, fila.enem_ini, fila.balas_ini], _presion_jefe_txt())
 	for k in fila:
 		presion_tot[k] = presion_tot.get(k, 0.0) + float(fila[k])
 	presion_tot["max_max_enem"] = maxf(presion_tot.get("max_max_enem", 0.0), fila.max_enem)
@@ -519,6 +547,9 @@ func _cerrar_presion() -> void:
 func _resumen_presion(n: float) -> void:
 	var t := presion_tot
 	print("[bot] presión promedio por partida: enemigos prom=%.1f max=%.1f (pico %d) | balas prom=%.1f max=%.1f (pico %d) | primeros 30 s: enemigos=%.1f balas=%.1f" % [t.get("enem", 0.0) / n, t.get("max_enem", 0.0) / n, int(t.get("max_max_enem", 0.0)), t.get("balas", 0.0) / n, t.get("max_balas", 0.0) / n, int(t.get("max_max_balas", 0.0)), t.get("enem_ini", 0.0) / n, t.get("balas_ini", 0.0) / n])
+	var j: float = t.get("jefes", 0.0)
+	if j > 0.0:
+		print("[bot] con jefe (%d partidas que llegaron): %.0f s jugando | balas prom=%.1f max=%.1f | golpes=%.1f" % [int(j), t.jefe_seg / j, t.jefe_balas / j, t.jefe_max_balas / j, t.jefe_golpes / j])
 
 
 func _soltar() -> void:
