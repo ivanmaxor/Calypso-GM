@@ -85,9 +85,10 @@ static func sin_spoiler(txt: String) -> String:
 ## El valor de un stat como se lee en una ficha: "+3 %" o "+12".
 static func valor_stat(k: String, v: float) -> String:
 	var signo := "+" if v >= 0.0 else "-"
+	# con un decimal: redondear a entero escondía las mejoras chicas (M13)
 	if k in PORCENTAJES:
-		return "%s%d %%" % [signo, int(round(absf(v) * 100.0))]
-	return "%s%d" % [signo, int(round(absf(v)))]
+		return "%s%s %%" % [signo, decimal(absf(v) * 100.0)]
+	return "%s%s" % [signo, decimal(absf(v))]
 
 
 ## "4,3": los decimales en Chile van con coma, y sin un ",0" que no aporta.

@@ -2979,6 +2979,7 @@ func _tests() -> void:
 	_tests_partida()
 	_tests_datos()
 	_tests_combate()
+	_tests_mejoras_visibles()
 	_tests_armas()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
@@ -3558,6 +3559,36 @@ func _tests_combate() -> void:
 			_ok(ca.tipo != "cura2", "la Sopaipilla no sale sin Desync")
 	c.queue_free()
 	Partida.nuevo()
+
+
+
+## M13: cada nivel de mejora de cualquier pieza cambia algún número que ve el jugador,
+## y antes de pagar se muestra qué sube.
+func _tests_mejoras_visibles() -> void:
+	var HE = load("res://pantallas/hangar_equipo.gd")
+	for id in Datos.ITEMS:
+		for rareza in [0, 3]:
+			var it := {"id": id, "rareza": rareza, "nivel": 1, "uid": -1}
+			var sin_cambio := 0
+			while it.nivel < Partida.nivel_max(it):
+				var antes := _textos_stats(Partida.stats_item(it))
+				var gana: String = HE.texto_mejora(it)
+				it.nivel += 1
+				if antes == _textos_stats(Partida.stats_item(it)):
+					sin_cambio += 1
+				_ok(gana.begins_with("Al mejorar: +") or gana.begins_with("Al mejorar: -"), "se ve qué gana %s antes de pagar: %s" % [id, gana])
+			_ok(sin_cambio == 0, "cada mejora de %s (rareza %d) cambia un número visible (%d sin cambio)" % [id, rareza, sin_cambio])
+			_ok(HE.texto_mejora(it) == "", "al máximo no ofrece mejora: " + id)
+	_ok(PiezaBoton.valor_stat("atk", 2.16) == "+2,2", "un decimal con coma: " + PiezaBoton.valor_stat("atk", 2.16))
+	_ok(PiezaBoton.valor_stat("atk", 3.0) == "+3", "sin ,0 que no aporta")
+	_ok(PiezaBoton.valor_stat("crit", 0.045) == "+4,5 %", "porcentaje con decimal: " + PiezaBoton.valor_stat("crit", 0.045))
+
+
+func _textos_stats(st: Dictionary) -> String:
+	var r := ""
+	for k in st:
+		r += k + PiezaBoton.valor_stat(k, st[k]) + ";"
+	return r
 
 
 ## Para mirar un arma en capturas (--vitrina): enemigos en formación que disparan y reaparecen,
