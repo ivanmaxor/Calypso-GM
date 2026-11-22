@@ -93,6 +93,8 @@ class Enemigo:
 	var cd3 := 200.0
 	var muerto := false
 	var cola_hits := 0
+	## Solo para mostrar: cuenta también las balas que pasan de largo cuando ya está sentenciado (M15).
+	var cola_vis := 0
 	var cola_dano := 0.0
 	var fase := 0
 	var inv := 0.0
@@ -150,6 +152,8 @@ class Tiro:
 	var rot := 0.0
 	var rotar := false
 	var golpeados := {}
+	## Enemigos sentenciados que esta bala ya cruzó en el Desync: solo suman al contador visible.
+	var vistos := {}
 	var obj = null
 
 
@@ -1060,6 +1064,7 @@ func _tick_cascada() -> void:
 		dmg = minf(dmg, e.hpmax * 0.35)
 	var hits := e.cola_hits
 	e.cola_hits = 0
+	e.cola_vis = 0
 	e.cola_dano = 0.0
 	var nota: int = ESCALA[mini(cascada_nota, ESCALA.size() - 1)]
 	cascada_nota += 1
@@ -1868,6 +1873,11 @@ func _colisiones() -> void:
 				continue
 			# en Desync, el que ya está sentenciado no ataja más balas: pasan al siguiente
 			if en_desync and not e.jefe and e.cola_dano * bono >= e.hp:
+				# igual se cuenta en el número que se ve, para que suba entero (no cambia el daño)
+				if not t.vistos.has(e.id):
+					t.vistos[e.id] = true
+					e.cola_vis += 1
+					e.flash = 2
 				continue
 			t.golpeados[e.id] = ticks + t.rehit if t.rehit > 0 else 2147483647
 			golpear(e, t.dmg, t.crit, t.x, t.y)
@@ -1984,6 +1994,7 @@ func golpear(e: Enemigo, dmg: float, crit: bool, x: float, y: float) -> void:
 		if e.cola_hits == 0:
 			cola.append(e)
 		e.cola_hits += 1
+		e.cola_vis += 1
 		e.cola_dano += dmg * e.mult_dano
 		cola_total += 1
 		e.flash = 2
@@ -3024,7 +3035,7 @@ func dibujar_frente(c: CanvasItem) -> void:
 		for e in cola:
 			if e.muerto or e.cola_hits <= 0:
 				continue
-			var lbl := "X%d" % e.cola_hits
+			var lbl := "X%d" % maxi(e.cola_vis, e.cola_hits)
 			var an := UI.ancho(lbl)
 			var yy: float = e.y - e.def.h / 2.0 - 12.0
 			# en dorado, los que ya están sentenciados
@@ -3230,10 +3241,10 @@ func dibujar_hud(c: CanvasItem) -> void:
 	c.draw_rect(rv, Color("0d0a18"))
 	c.draw_rect(Rect2(rv.position + Vector2.ONE, Vector2((rv.size.x - 2) * clampf(hp_visto / stats.hp, 0.0, 1.0), rv.size.y - 2)), Color.WHITE)
 	c.draw_rect(Rect2(rv.position + Vector2.ONE, Vector2((rv.size.x - 2) * frac, rv.size.y - 2)), col_hp if hp_flash % 2 == 0 else UI.C_ROJO)
-	UI.t(c, 5, 30, "ARMAS %d/%d" % [arsenal.armas.size(), Partida.max_armas()], UI.C_CIAN)
+	UI.t(c, 5, 31, "ARMAS %d/%d" % [arsenal.armas.size(), Partida.max_armas()], UI.C_CIAN)
 	for i in Datos.TOPE_ARMAS:
 		var x := 8.0 + (i % 2) * 54.0
-		var y := 44.0 + (i / 2) * 42.0
+		var y := 48.0 + (i / 2) * 42.0
 		if i < arsenal.armas.size():
 			var a = arsenal.armas[i]
 			_ranura_arma(c, x, y, a.id, a.nivel, Datos.NIVEL_MAX_CARTA, a.evo)
@@ -3241,11 +3252,11 @@ func dibujar_hud(c: CanvasItem) -> void:
 			_ranura_arma(c, x, y, "", 0, 0, false)
 		else:
 			_ranura_cerrada(c, x, y)
-	UI.t(c, 5, 128, "HABILIDADES %d/%d" % [habs.size(), Partida.max_habs()], UI.C_VERDE)
+	UI.t(c, 5, 133, "HABILIDADES %d/%d" % [habs.size(), Partida.max_habs()], UI.C_VERDE)
 	var ids: Array = habs.keys()
 	for i in Datos.TOPE_HABS:
 		var x := 8.0 + (i % 2) * 54.0
-		var y := 142.0 + (i / 2) * 42.0
+		var y := 150.0 + (i / 2) * 42.0
 		if i < ids.size():
 			_ranura_arma(c, x, y, ids[i], habs[ids[i]], Datos.max_hab(ids[i]), false)
 		elif i < Partida.max_habs():
@@ -3253,7 +3264,7 @@ func dibujar_hud(c: CanvasItem) -> void:
 		else:
 			_ranura_cerrada(c, x, y)
 	# desync y esquiva, abajo
-	var y0 := 230
+	var y0 := 240
 	if tiene_desync:
 		var listo := barra >= 100.0 and estado == "jugando"
 		var en_uso := estado == "desync"
@@ -3272,7 +3283,8 @@ func dibujar_hud(c: CanvasItem) -> void:
 		y0 += 48
 	else:
 		UI.t(c, 5, y0, "DESYNC", Color("3a3458"))
-		c.draw_texture(Datos.tex("ui_candado"), Vector2(48, y0 + 2))
+		# el candado va después del texto medido, con aire, y no pegado a la "C"
+		c.draw_texture(Datos.tex("ui_candado"), Vector2(5 + UI.ancho("DESYNC") + 5, y0 + 2))
 		y0 += 24
 	var listo_d := dash_cd <= 0
 	UI.t(c, 5, y0, "ESQUIVA  " + Controles.texto("esquivar"), UI.C_TEXTO if listo_d else UI.C_GRIS)
@@ -3377,6 +3389,25 @@ func dibujar_cartas(c: CanvasItem) -> void:
 	UI.tc(c, PX + ANCHO / 2.0, ty, "%s: cambiar cartas (te quedan %d)" % [Controles.texto("desync"), cambios_restantes], UI.C_TEXTO if cambios_restantes > 0 else Color("6a6488"))
 
 
+## Dónde va cada cosa dentro de una carta. El bloque de sinergia se arma desde abajo, para que
+## nada se salga aunque el nombre ocupe dos líneas o el título no quepa junto al OK (M07).
+func _layout_carta(ca: Dictionary, r: Rect2) -> Dictionary:
+	var l := {"y_pips": r.end.y - 41.0}
+	var y := r.position.y + 84.0 + 13.0 * UI.partir(ca.nombre, r.size.x - 8.0).size() + 2.0
+	l["y_fin_desc"] = y + 13.0 * UI.partir(ca.desc, r.size.x - 10.0).size()
+	if ca.has("sinergia"):
+		var util := r.size.x - 8.0
+		var titulo: String = ca.sin_txt
+		if ca.sin_ok and UI.ancho(titulo) + 4.0 + UI.ancho("¡OK!") > util:
+			titulo = "Evoluciona:"
+		var lineas := UI.partir(ca.sinergia, util - 18.0)
+		l["titulo"] = titulo
+		l["lineas"] = lineas
+		l["y_sin"] = r.end.y - 21.0 - 13.0 * lineas.size()
+		l["y_pips"] = l.y_sin - 7.0
+	return l
+
+
 func _dibujar_carta(c: CanvasItem, i: int) -> void:
 	var r := _rect_carta(i)
 	var ca: Dictionary = cartas[i]
@@ -3397,6 +3428,8 @@ func _dibujar_carta(c: CanvasItem, i: int) -> void:
 	if sel:
 		r.position.y -= 2.0
 		c.draw_rect(r.grow(2), Color.WHITE, false, 1.0)
+	# después de subir la seleccionada: así todo el contenido sube junto con su marco
+	var lay := _layout_carta(ca, r)
 	UI.marco(c, r, UI.C_PANEL, col)
 	c.draw_rect(Rect2(r.position, Vector2(r.size.x, 15)), col.darkened(0.55))
 	var cx := r.position.x + r.size.x / 2.0
@@ -3420,13 +3453,16 @@ func _dibujar_carta(c: CanvasItem, i: int) -> void:
 		for k in mx:
 			var xx := cx - w / 2.0 + k * 8
 			var pip := UI.C_ORO if k < ca.nv else (UI.C_TEXTO if k == ca.nv and (ticks / 15) % 2 == 0 else Color("3a3458"))
-			c.draw_rect(Rect2(xx, r.position.y + r.size.y - 41, 6, 5), pip)
+			c.draw_rect(Rect2(xx, lay.y_pips, 6, 5), pip)
 	# sinergia: que se necesita para evolucionar
 	if ca.has("sinergia"):
-		var yy := r.position.y + r.size.y - 34
+		var yy: float = lay.y_sin
 		c.draw_line(Vector2(r.position.x + 3, yy), Vector2(r.end.x - 3, yy), UI.C_LINEA, 1.0)
-		UI.t(c, r.position.x + 4, yy, ca.sin_txt, UI.C_GRIS)
-		c.draw_texture_rect(Datos.tex(ca.sin_icono), Rect2(r.position.x + 4, yy + 15, 16, 16), false)
-		UI.t(c, r.position.x + 22, yy + 14, ca.sinergia, UI.C_VERDE if ca.sin_ok else UI.C_TEXTO)
+		UI.t(c, r.position.x + 4, yy, lay.titulo, UI.C_GRIS)
 		if ca.sin_ok:
-			UI.t(c, r.end.x - 19, yy, "¡OK!", UI.C_VERDE)
+			UI.t(c, r.end.x - 4 - UI.ancho("¡OK!"), yy, "¡OK!", UI.C_VERDE)
+		c.draw_texture_rect(Datos.tex(ca.sin_icono), Rect2(r.position.x + 4, yy + 15, 16, 16), false)
+		var yn := yy + 14
+		for lin in lay.lineas:
+			UI.t(c, r.position.x + 22, yn, lin, UI.C_VERDE if ca.sin_ok else UI.C_TEXTO)
+			yn += 13
