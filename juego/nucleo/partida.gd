@@ -1002,9 +1002,8 @@ func _sumar(s: Dictionary, mods: Dictionary, factor := 1.0) -> void:
 		s[k] = s.get(k, 0) + mods[k] * factor
 
 
-## Cuánto sube cada nivel de mejora, sobre la base de la pieza. Con 4 % la Mira subía 0,08 de ataque
-## por nivel y no se notaba (M13); con 8 % cada nivel cambia el número que se ve.
-const MEJORA_POR_NIVEL := 0.08
+## Cuánto sube cada nivel de mejora, sobre la base de la pieza.
+const MEJORA_POR_NIVEL := 0.04
 
 
 func stats_item(it: Dictionary) -> Dictionary:

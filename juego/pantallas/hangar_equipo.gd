@@ -315,9 +315,8 @@ static func texto_mejora(it: Dictionary) -> String:
 	var luego := Partida.stats_item(sig)
 	var partes := PackedStringArray()
 	for k in luego:
+		# con el mismo signo que la ficha: la recarga de esquiva baja, así que se ve "-0,2 %"
 		var dif: float = luego[k] - ahora.get(k, 0.0)
-		if k == "dash_cd":
-			dif = -dif
 		var txt := PiezaBoton.valor_stat(k, dif)
 		if txt.trim_prefix("+").trim_prefix("-").trim_suffix(" %") == "0":
 			continue
