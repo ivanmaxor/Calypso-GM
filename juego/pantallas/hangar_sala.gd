@@ -27,6 +27,8 @@ var orden_z: Array = []
 var botones := {}
 var luz := {}
 var texs := {}
+## Lo del fondo que va delante de las estaciones (SalaHangar.DELANTE), por id.
+var texs_delante := {}
 var datos := {}
 var sombra := 0.0
 var t := 0.0
@@ -50,6 +52,8 @@ func _ready() -> void:
 		texs[id] = Datos.tex("hangar_obj_" + id)
 		datos[id] = contorno_de(texs[id])
 		luz[id] = 0.0
+	for id in SalaHangar.DELANTE:
+		texs_delante[id] = Datos.tex("hangar_delante_" + id)
 	orden = SalaHangar.ORDEN.duplicate()
 	orden.sort_custom(_mas_a_la_izquierda)
 	orden_z = SalaHangar.ORDEN.duplicate()
@@ -222,6 +226,9 @@ func _draw() -> void:
 			# lo cerrado se ve apagado aunque tenga foco
 			col = Color(v * 0.5, v * 0.48, v * 0.6)
 		draw_texture_rect(texs[id], _rect(id), false, col)
+	# lo del fondo que en la habitación está más adelante que una estación: va encima, con la luz del fondo
+	for id in texs_delante:
+		draw_texture_rect(texs_delante[id], SalaHangar.DELANTE[id], false, Color(b, b, b))
 	_dibujar_mascota()
 	draw_rect(Rect2(0, 0, 640, 26), Color(0.05, 0.04, 0.09, 0.9))
 

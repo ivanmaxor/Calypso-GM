@@ -17,3 +17,12 @@ const ORDEN := ["naves", "equipo", "fusionar", "mascota", "arsenal", "salida"]
 ## Centro de la nave real (48x48 al doble), flotando sobre el plato, y de la mascota activa (al doble), sobre la frazada de su tina.
 const POS_NAVE := Vector2(320, 224)
 const POS_MASCOTA := Vector2(475, 225)
+## Lo del fondo que en la habitación queda delante de una estación (la lámpara, los rollos, el letrero de piso mojado
+## y la caja de herramientas). Se dibuja después de las estaciones, con la misma luz que el fondo.
+## Cada id es el sprite hangar_delante_<id> y su rectángulo. Lo escribe el generador junto con hangar_fondo.
+const DELANTE := {
+	"lampara": Rect2(368, 26, 40, 47),
+	"herramientas": Rect2(564, 286, 70, 38),
+	"piso_mojado": Rect2(194, 242, 46, 65),
+	"rollos": Rect2(107, 249, 33, 59),
+}

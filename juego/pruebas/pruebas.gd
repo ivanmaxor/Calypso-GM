@@ -12,6 +12,7 @@ extends Node
 ##   --nave=id                                    nave que se usa
 ##   --armas=a,b  --habs=a,b  --evo               parte el combate con eso puesto
 ##   --bot  --torpe                               juega solo, bien o mal
+##   --foco                                       el bot juega con el foco apretado (para mirar la hitbox en capturas)
 ##   --quieto                                     bot que no se mueve ni esquiva nunca
 ##   --ciego                                      bot que persigue enemigos y elige bien las cartas, pero jamás esquiva
 ##   --generar=1-8                                arma con Partida.generar_para la partida de quien viene llegando a ese nivel
@@ -299,6 +300,9 @@ func _preparar_combate(c) -> void:
 		c.barra = float(args.barra)
 	if args.has("ruleta"):
 		c.ruleta_forzada = Array(args.ruleta.split(","))
+	# --pausa: abre el menú de pausa al partir, para capturarlo
+	if args.has("pausa"):
+		c.abrir_pausa.call_deferred()
 
 
 func _marcar_vistos() -> void:
@@ -518,6 +522,8 @@ func _bot_combate(c) -> void:
 		if c.ticks % reaccion == 0:
 			_decidir(c)
 		_aplicar_dir()
+		if args.has("foco"):
+			Input.action_press("foco")
 		if dash_pendiente and c.dash_cd <= 0 and dash_suelto:
 			Input.action_press("esquivar")
 			dash_pendiente = false
@@ -2980,9 +2986,50 @@ func _tests() -> void:
 	_tests_datos()
 	_tests_combate()
 	_tests_mejoras_visibles()
+	_tests_pausa_equipo()
+	_tests_desafios_silueta()
+	_tests_xp_tras_desync()
+	_tests_cartas_caben()
+	_tests_desync_visual()
 	_tests_armas()
+	_tests_hangar_delante()
+	_tests_hitbox_indicador()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
+
+
+## M02: lo del fondo que va delante de una estación es un recorte exacto del fondo, en su lugar, y tapa a alguna estación.
+func _tests_hangar_delante() -> void:
+	_ok(SalaHangar.DELANTE.size() >= 3, "M02: hay sprites para lo que va delante de las estaciones")
+	var fondo: Image = Datos.tex("hangar_fondo").get_image().duplicate()
+	fondo.convert(Image.FORMAT_RGBA8)
+	for id in SalaHangar.DELANTE:
+		var r: Rect2 = SalaHangar.DELANTE[id]
+		var nombre: String = "hangar_delante_" + id
+		_ok(Datos.existe_tex(nombre), "M02: existe " + nombre)
+		if not Datos.existe_tex(nombre):
+			continue
+		var tex := Datos.tex(nombre)
+		_ok(Vector2(tex.get_size()) == r.size, "M02: %s mide lo que dice SalaHangar" % nombre)
+		_ok(r.position.y >= 26.0 and r.position.x >= 0.0 and r.end.x <= 640.0 and r.end.y <= 360.0, "M02: %s no tapa la barra ni sale de la pantalla" % nombre)
+		var tapa := false
+		for est in SalaHangar.ORDEN:
+			tapa = tapa or r.intersects(SalaHangar.OBJETOS[est].r)
+		_ok(tapa, "M02: %s queda encima de alguna estación" % nombre)
+		var img: Image = tex.get_image().duplicate()
+		img.convert(Image.FORMAT_RGBA8)
+		var distintos := 0
+		var llenos := 0
+		for y in img.get_height():
+			for x in img.get_width():
+				var c := img.get_pixel(x, y)
+				if c.a8 == 0:
+					continue
+				llenos += 1
+				var f := fondo.get_pixel(int(r.position.x) + x, int(r.position.y) + y)
+				if c.r8 != f.r8 or c.g8 != f.g8 or c.b8 != f.b8 or c.a8 != 255:
+					distintos += 1
+		_ok(llenos > 0 and distintos == 0, "M02: %s calza pixel a pixel con el fondo (%d distintos)" % [nombre, distintos])
 
 
 func _tests_teclas() -> void:
@@ -3591,6 +3638,244 @@ func _textos_stats(st: Dictionary) -> String:
 	for k in st:
 		r += k + PiezaBoton.valor_stat(k, st[k]) + ";"
 	return r
+
+
+
+## M16 y M17: la pausa muestra lo equipado y las estrellas, y todo cabe en su columna.
+func _tests_pausa_equipo() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-5"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	# lo más largo posible: todas las armas y habilidades, de a 4 (el tope de ranuras)
+	var armas: Array = Datos.ARMAS.keys()
+	var habs: Array = Datos.HABILIDADES.keys()
+	var P = load("res://pantallas/pausa.gd")
+	var k := 0
+	var evo := false
+	while k < maxi(armas.size(), habs.size()):
+		for a in c.arsenal.armas.duplicate():
+			c.arsenal.armas.erase(a)
+		c.habs.clear()
+		for j in Datos.TOPE_ARMAS:
+			if k + j < armas.size():
+				var ar = c.arsenal.agregar(armas[k + j])
+				ar.evo = evo
+		for j in Datos.TOPE_HABS:
+			if k + j < habs.size():
+				c.habs[habs[k + j]] = Datos.max_hab(habs[k + j])
+		var p = P.new()
+		p.combate = c
+		for tipo in ["armas", "habs"]:
+			var lista: Array = p.entradas(tipo)
+			var y: float = P.COL_Y + 16.0
+			for e in lista:
+				_ok(UI.ancho(e.nombre) + 6.0 + UI.ancho(e.nivel) <= P.COL_ANCHO - 38.0, "el nombre y el nivel caben en la pausa: " + e.nombre)
+				for lin in e.desc:
+					_ok(UI.ancho(lin) <= P.COL_ANCHO - 38.0, "la descripción cabe en la pausa: " + lin)
+				y = maxf(y + 12.0 + 13.0 * e.desc.size(), y + 34.0) + 6.0
+			_ok(y <= P.COL_FIN, "la columna de %s cabe en la pantalla (%d)" % [tipo, int(y)])
+		_ok(p.entradas("armas").size() == c.arsenal.armas.size() and p.entradas("habs").size() == c.habs.size(), "se ve todo lo equipado")
+		p.free()
+		# cada grupo de 4 se prueba normal y después todo evolucionado (lo más largo)
+		if evo:
+			k += 4
+		evo = not evo
+	var p2 = P.new()
+	p2.combate = c
+	var est: Array = p2.estrellas()
+	_ok(est.size() == 4, "en un nivel normal se ven las 3 estrellas")
+	for e in est:
+		_ok(UI.partir(e.txt, P.CENTRO_ANCHO - 18.0).size() == 1, "la estrella cabe en una línea: " + e.txt)
+	p2.free()
+	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M18: en Arsenal → Desafíos, el premio que no has ganado se ve como silueta; el ganado, entero.
+func _tests_desafios_silueta() -> void:
+	Partida.nuevo()
+	var ar = load("res://pantallas/arsenal.gd").new()
+	var tipos := {}
+	for de in Datos.DESAFIOS:
+		tipos[de.premio.tipo] = true
+		var ranura := String(de.premio.tipo).begins_with("ranura")
+		_ok(ar.premio_en_silueta(de) == (not ranura), "sin ganar, el premio de %s se ve en silueta (salvo ranuras)" % de.id)
+	_ok(tipos.has("arma") and tipos.has("hab"), "hay desafíos que dan armas y habilidades")
+	# en las filas de nave, el candado va encima de la nave (la nave es un hijo y taparía el _draw)
+	var filas_nave := 0
+	for de in Datos.DESAFIOS:
+		if de.premio.tipo != "nave" or not Partida.desafio_visible(de):
+			continue
+		var f = ar.Fila.new()
+		f.de = de
+		f.a = ar
+		add_child(f)
+		var hijos: Array = f.get_children()
+		_ok(hijos.size() == 2 and hijos[0] == f.spr and hijos[1] is Sprite2D and hijos[1].texture == Datos.tex("ui_candado"), "el candado tapa a la nave en silueta: " + de.id)
+		f.free()
+		filas_nave += 1
+	print("  filas de nave revisadas: %d" % filas_nave)
+	var de0: Dictionary = Datos.DESAFIOS[0]
+	Partida.d.desafios.append(de0.id)
+	_ok(not ar.premio_en_silueta(de0), "ganado, el premio se ve entero")
+	ar.free()
+	Partida.nuevo()
+
+
+
+## M14: tras el Desync las cartas esperan a que lleguen los Bits de la cascada y al respiro del nivel;
+## fuera de él, nada cambia.
+func _tests_xp_tras_desync() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.jx = 200.0
+	c.jy = 300.0
+	# sin Desync: con un nivel pendiente, las cartas salen al tiro, como antes
+	c.estado = "jugando"
+	c.niveles_pendientes = 1
+	c._revisar_cartas()
+	_ok(c.estado == "cartas", "sin Desync, las cartas salen al tiro")
+	c.estado = "jugando"
+	c.niveles_pendientes = 0
+	# tras la cascada: un Bit lejos de la nave, que vuela de verdad con _tick_gemas
+	c.gemas.clear()
+	c._gema(c.jx, c.jy - 200.0, "bit", 1)
+	c.estado = "cascada"
+	c.cola.clear()
+	c._terminar_cascada()
+	_ok(c.estado == "jugando" and c.tras_desync_t == c.TRAS_DESYNC, "al terminar la cascada empieza la espera")
+	_ok(c.gemas[0].de_cascada, "el Bit de la cascada queda marcado")
+	c.niveles_pendientes = 1
+	c.nivel_flash = 0
+	c._revisar_cartas()
+	_ok(c.estado == "jugando", "no salen las cartas mientras el Bit va en camino")
+	var n := 0
+	while c.estado == "jugando" and n < 400:
+		c.ticks += 1
+		c._tick_gemas()
+		c._revisar_cartas()
+		n += 1
+	_ok(c.estado == "cartas", "después, las cartas salen")
+	_ok(c.gemas.is_empty(), "el Bit llegó a la nave")
+	_ok(n > 5 and n < c.TRAS_DESYNC, "salen cuando llega el Bit, antes del tope (%d cuadros)" % n)
+	_ok(c.nivel_flash == 0, "al abrir las cartas se apaga el destello")
+	# subir de nivel al final de la espera igual da el respiro completo
+	c.estado = "jugando"
+	c.niveles_pendientes = 0
+	c.tras_desync_t = 5
+	c.xp = c.xp_sig - 0.01
+	var g = c.Gema.new()
+	g.tipo = "bit"
+	c._recoger(g)
+	_ok(c.niveles_pendientes >= 1 and c.tras_desync_t >= c.RESPIRO_NIVEL, "el respiro se cumple entero (%d)" % c.tras_desync_t)
+	# aunque el Bit no llegue nunca, la espera tiene tope
+	c.niveles_pendientes = 1
+	c.tras_desync_t = c.TRAS_DESYNC
+	c.gemas.clear()
+	var g2 = c.Gema.new()
+	g2.de_cascada = true
+	g2.x = -9999.0
+	c.gemas.append(g2)
+	n = 0
+	while c.estado == "jugando" and n < 400:
+		c._revisar_cartas()
+		n += 1
+	_ok(c.estado == "cartas" and n <= c.TRAS_DESYNC + 1, "la espera tiene tope (%d cuadros)" % n)
+	# si la cascada cierra el nivel, no hay espera ni destello pegado en la victoria
+	c.estado = "cascada"
+	c.gemas.clear()
+	c.victoria_pendiente = true
+	c._terminar_cascada()
+	_ok(c.estado == "victoria" and c.tras_desync_t == 0, "con victoria no se espera")
+	c.victoria_pendiente = false
+	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M07: en todas las cartas posibles, la sinergia y el OK caben y no se montan sobre la descripción.
+func _tests_cartas_caben() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	var r: Rect2 = c._rect_carta(0)
+	var util := r.size.x - 8.0
+	var cartas := []
+	for id in Datos.ARMAS:
+		for nv in Datos.ARMAS[id].mejoras.size() + 1:
+			cartas.append(c._carta_arma(id, nv))
+	for id in Datos.HABILIDADES:
+		cartas.append(c._carta_hab(id, 0))
+		cartas.append(c._carta_hab(id, 1))
+	for ca in cartas:
+		for ok in [false, true]:
+			if not ca.has("sinergia"):
+				continue
+			ca.sin_ok = ok
+			var l: Dictionary = c._layout_carta(ca, r)
+			var ancho_titulo: float = UI.ancho(l.titulo) + (4.0 + UI.ancho("¡OK!") if ok else 0.0)
+			_ok(ancho_titulo <= util, "el título de sinergia y el OK caben: %s %s" % [ca.nombre, l.titulo])
+			for lin in l.lineas:
+				_ok(UI.ancho(lin) <= util - 18.0, "el nombre de la sinergia cabe: " + lin)
+			_ok(l.y_sin + 14.0 + 13.0 * l.lineas.size() <= r.end.y, "la sinergia no se sale por abajo: " + ca.nombre)
+		var l2: Dictionary = c._layout_carta(ca, r)
+		_ok(l2.y_fin_desc <= l2.y_pips + 2.0, "la descripción no tapa los niveles: %s (%d > %d)" % [ca.nombre, int(l2.y_fin_desc), int(l2.y_pips)])
+	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M15: el número del Desync sube entero aunque el enemigo ya esté sentenciado, sin cambiar el daño.
+func _tests_desync_visual() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.jx = 200.0
+	c.jy = 300.0
+	c.enemigos.clear()
+	var e = c._crear_enemigo({"tipo": "bot", "ancla": [200, 180]})
+	e.x = 200.0
+	e.y = 180.0
+	e.modo = "actuar"
+	c.estado = "desync"
+	c.tiros.clear()
+	# balas de sobra para matarlo varias veces, una por una
+	for k in 30:
+		c.tiros.clear()
+		c.crear_tiro(200.0, 180.0, -PI / 2.0, 0.0, e.hpmax, Datos.tex("tiro2"), 1, false)
+		c._colisiones()
+		c.ticks += 1
+	_ok(c.cola_total < 30, "las balas que pasan de largo no suman a la cascada (%d)" % c.cola_total)
+	_ok(e.cola_vis == 30, "el número que se ve cuenta todas las balas (%d)" % e.cola_vis)
+	var dano: float = e.cola_dano
+	_ok(e.cola_hits == c.cola_total, "el daño en cola solo viene de las balas que pegaron")
+	# una misma bala que se queda varios cuadros sobre el sentenciado suma una sola vez
+	var vis_antes: int = e.cola_vis
+	c.tiros.clear()
+	c.crear_tiro(200.0, 180.0, -PI / 2.0, 0.0, e.hpmax, Datos.tex("tiro2"), 1, false)
+	for k in 5:
+		c._colisiones()
+		c.ticks += 1
+	_ok(e.cola_vis == vis_antes + 1, "una bala quieta sobre el sentenciado suma una vez (%d)" % (e.cola_vis - vis_antes))
+	c.tiros.clear()
+	c.cola_i = 0
+	c.cascada_t = 0.0
+	c.estado = "cascada"
+	c._tick_cascada()
+	_ok(e.cola_vis == 0 and e.cola_hits == 0, "la cascada reinicia el número")
+	_ok(dano > 0.0, "hubo daño en cola")
+	c.queue_free()
+	Partida.nuevo()
 
 
 ## Para mirar un arma en capturas (--vitrina): enemigos en formación que disparan y reaparecen,
@@ -4395,4 +4680,31 @@ func _test_balas_rotas() -> void:
 		c.arsenal.tick()
 	_ok(c.tiros.size() <= c.MAX_TIROS, "con el tope lleno no entran más balas")
 	c.tiros.clear()
+	c.queue_free()
+
+
+## M01: el indicador de la hitbox queda discreto jugando normal y se ve entero en foco o Desync.
+## La hitbox real no cambia: es regla de juego.
+func _tests_hitbox_indicador() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.estado = "jugando"
+	c.foco = false
+	_ok(not c.hitbox_destacada(), "jugando normal, la hitbox se ve discreta")
+	c.foco = true
+	_ok(c.hitbox_destacada(), "en foco, la hitbox se ve entera")
+	c.foco = false
+	c.estado = "desync"
+	_ok(c.hitbox_destacada(), "en Desync, la hitbox se ve entera")
+	_ok(is_equal_approx(c.hitbox(), 3.5), "el indicador no cambia el tamaño real de la hitbox")
+	for est in ["reconectando", "cascada"]:
+		c.estado = est
+		_ok(c.hitbox_destacada(), "con el filtro del Desync (%s), la hitbox se ve entera" % est)
+	# con la hitbox más chica posible, el centro discreto no tapa el aro
+	c.estado = "jugando"
+	c.stats.hitbox_mult = 0.0
+	_ok(c.centro_hitbox_discreta() <= c.hitbox() - 0.5, "con la hitbox mínima el aro se sigue viendo (%.2f / %.2f)" % [c.centro_hitbox_discreta(), c.hitbox()])
 	c.queue_free()
