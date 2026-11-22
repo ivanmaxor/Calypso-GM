@@ -5,6 +5,8 @@ extends Control
 signal terminado
 
 const TIPOS_PREMIO := ["pieza", "chatarra", "cambios"]
+## Lo que solo se ve en el Arsenal. Antes de abrirlo (Tablón), se avisa dónde va a estar (#66).
+const SE_VE_EN_ARSENAL := ["arma", "hab", "ranura_arma", "ranura_hab"]
 
 var premio := {}
 var indice := 1  # "2 de 3", cuando hay varios seguidos
@@ -12,6 +14,7 @@ var total := 1
 var t := 0
 var cerrado := false
 var cuerpo := PackedStringArray()
+var donde := PackedStringArray()
 
 
 func _ready() -> void:
@@ -22,6 +25,23 @@ func _ready() -> void:
 	Sonido.tocar("desbloqueo")
 	var txt: String = premio.get("detalle", premio.get("desc", ""))
 	cuerpo = UI.partir(txt, 480.0)
+	donde = UI.partir(donde_se_ve(), 480.0)
+
+
+## #66: un desafío cumplido antes del 1-4 da algo que todavía no se ve en ninguna parte, porque el
+## Arsenal sigue cerrado. Esto dice dónde va a estar y que ya cuenta. Vacío si no hace falta.
+func donde_se_ve() -> String:
+	if not premio.has("desafio") or not premio.get("tipo", "") in SE_VE_EN_ARSENAL or Partida.tiene("tablon"):
+		return ""
+	var nivel := ""
+	for id in Datos.ORDEN_NIVELES:
+		if Datos.NIVELES[id].premio.tipo == "tablon":
+			nivel = id
+			break
+	var ya: String = "Ya puede salir en las cartas." if premio.tipo in ["arma", "hab"] else "Ya cuenta en el combate."
+	if nivel == "":
+		return ya + " Lo verás en el ARSENAL del Hangar, que se abre más adelante."
+	return ya + " Lo verás en el ARSENAL del Hangar, que se abre al completar el nivel %s." % nivel
 
 
 var _t_acum := 0.0
@@ -109,6 +129,10 @@ func _nombre_y_texto() -> void:
 	var y := 240.0
 	for lin in cuerpo:
 		UI.tc(self, 320, y, lin, UI.C_GRIS, 1, true)
+		y += 14
+	y += 8
+	for lin in donde:
+		UI.tc(self, 320, y, lin, UI.C_CIAN, 1, true)
 		y += 14
 
 
