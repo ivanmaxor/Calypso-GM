@@ -45,6 +45,7 @@ var b_opciones: Button
 var b_menu: Button
 var b_ngplus: Button = null
 var columna: Array = []
+var esc_armado := false  # el primer Esc ya llevó el foco a MENÚ: el próximo sale, aunque el mouse haya movido el foco
 var info_mundo := ""
 var arrastrando := false
 var arrastre_x := 0.0
@@ -392,15 +393,26 @@ func _nueva_plus() -> void:
 
 
 ## Esc: del camino al menú de la izquierda, y de ahí al título.
+## El segundo Esc sale aunque el mouse le haya quitado el foco a MENÚ al pasar por un nivel (#68).
 func _unhandled_input(ev: InputEvent) -> void:
 	if modal != null or bloqueado or not ev.is_action_pressed("ui_cancel"):
 		return
 	get_viewport().set_input_as_handled()
-	if get_viewport().gui_get_focus_owner() == b_menu:
+	if get_viewport().gui_get_focus_owner() == b_menu or esc_armado:
 		ir_titulo.emit()
 	else:
 		Sonido.tocar("ui_no")
 		b_menu.grab_focus()
+		esc_armado = true
+
+
+## Moverse con teclado o mando, o hacer clic, es hacer otra cosa: el próximo Esc vuelve a llevar a MENÚ.
+## Mover el mouse no cuenta: pasar por encima de un nivel no es elegirlo.
+func _input(ev: InputEvent) -> void:
+	if not esc_armado or ev.is_action("ui_cancel"):
+		return
+	if (ev is InputEventKey or ev is InputEventJoypadButton or ev is InputEventMouseButton) and ev.pressed:
+		esc_armado = false
 
 
 func _campo_input(ev: InputEvent) -> void:
