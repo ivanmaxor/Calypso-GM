@@ -2979,6 +2979,7 @@ func _tests() -> void:
 	_tests_partida()
 	_tests_datos()
 	_tests_combate()
+	_tests_xp_tras_desync()
 	_tests_armas()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
@@ -3556,6 +3557,62 @@ func _tests_combate() -> void:
 			if ca.tipo == "hab":
 				_ok(not Datos.HABILIDADES[ca.id].has("requiere"), "nada del Desync sin Desync: " + ca.id)
 			_ok(ca.tipo != "cura2", "la Sopaipilla no sale sin Desync")
+	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M14: tras el Desync las cartas esperan a que llegue la XP y al respiro del nivel; fuera de él, nada cambia.
+func _tests_xp_tras_desync() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	# sin Desync: con un nivel pendiente, las cartas salen al tiro, como antes
+	c.estado = "jugando"
+	c.niveles_pendientes = 1
+	c._revisar_cartas()
+	_ok(c.estado == "cartas", "sin Desync, las cartas salen al tiro")
+	c.estado = "jugando"
+	c.niveles_pendientes = 0
+	# tras la cascada: Bits imantados en camino y un nivel recién subido
+	c.estado = "cascada"
+	c.cola.clear()
+	c._terminar_cascada()
+	_ok(c.estado == "jugando" and c.tras_desync_t == c.TRAS_DESYNC, "al terminar la cascada empieza la espera")
+	var g = c.Gema.new()
+	g.x = c.jx
+	g.y = c.jy - 200.0
+	g.imantada = true
+	c.gemas.append(g)
+	c.niveles_pendientes = 1
+	c.nivel_flash = c.RESPIRO_NIVEL
+	c._revisar_cartas()
+	_ok(c.estado == "jugando", "no salen las cartas mientras la XP va en camino")
+	var n := 0
+	while c.estado == "jugando" and n < 400:
+		c.ticks += 1
+		c._tick_botin()
+		c._revisar_cartas()
+		n += 1
+	_ok(c.estado == "cartas", "después, las cartas salen igual")
+	_ok(n >= c.RESPIRO_NIVEL and n <= c.TRAS_DESYNC, "la espera dura entre el respiro y el máximo (%d cuadros)" % n)
+	_ok(c.nivel_flash == 0, "al abrir las cartas se apaga el destello")
+	# aunque los Bits no lleguen nunca, la espera tiene tope
+	c.estado = "jugando"
+	c.niveles_pendientes = 1
+	c.tras_desync_t = c.TRAS_DESYNC
+	c.gemas.clear()
+	var g2 = c.Gema.new()
+	g2.imantada = true
+	g2.x = -9999.0
+	c.gemas.append(g2)
+	n = 0
+	while c.estado == "jugando" and n < 400:
+		c._revisar_cartas()
+		n += 1
+	_ok(c.estado == "cartas" and n <= c.TRAS_DESYNC + 1, "la espera tiene tope (%d cuadros)" % n)
 	c.queue_free()
 	Partida.nuevo()
 
