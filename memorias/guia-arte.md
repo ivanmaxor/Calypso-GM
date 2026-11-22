@@ -9,7 +9,7 @@ Cómo se hace el arte de Calypso y cómo hacer arte nuevo que se vea igual. **L�
   - todo tiene el mismo estilo;
   - una animación sale cambiando un número;
   - se puede rehacer cualquier sprite;
-  - el resultado es **reproducible byte a byte**.
+  - el resultado es **reproducible píxel a píxel**. Byte a byte no siempre: según la versión de Pillow, el mismo dibujo puede guardarse con bytes distintos (ver §5, paso 7).
 - **Límites conocidos:** sale peor en lo orgánico (caras, manos, plantas). Las manos de Don Tuerca son puños simples.
 - A los jugadores **les encantan los diseños**. Lo nuevo tiene que verse igual a lo que ya está: **mismo motor, misma luz y mismas rampas de color**.
 - **Nunca se edita a mano un PNG que sale de un generador:** se cambia el generador y se vuelve a generar.
@@ -97,6 +97,12 @@ El efecto de pantalla del Desync es `juego/arte/desync.gdshader`: desatura y hac
    Sale en 1280×720. Pantallas posibles: `mapa`, `hangar`, `combate`, `naves`, `panel`, `dialogo`, `premio`, `resultado` y `opciones`.
 5. Si falta un dibujo, `Datos.tex()` devuelve un cuadro **magenta**: el juego no se cae y la falta se nota al probar.
 6. En el PR van capturas de antes y después.
+7. **Antes del commit, separa lo que cambió de verdad:**
+   ```bash
+   python herramientas/arte/png_sin_cambios.py              # informa
+   python herramientas/arte/png_sin_cambios.py --restaurar  # deja como estaban los que solo cambiaron en bytes
+   ```
+   Compara cada PNG modificado con el de `HEAD` píxel a píxel. Si solo cambiaron los bytes (otra versión de Pillow o de zlib), no va en el commit: git lo marcaría como cambio y chocaría con la otra persona sin razón.
 
 ## 6. Identidad y tono
 

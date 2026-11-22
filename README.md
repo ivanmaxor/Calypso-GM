@@ -71,7 +71,7 @@ bash herramientas/probar.sh cap <carpeta_absoluta> 60,300 --pantalla=hangar --sa
 
 Las pruebas abren la ventana **fuera de la pantalla**, así que no te quitan el escritorio. Usan sus propios guardados, sin tocar tus partidas. Con `CALYPSO_P=<prefijo>` dos pruebas a la vez no se pisan. Más detalles en [memorias/aprendizajes.md](memorias/aprendizajes.md).
 
-**Generadores de arte y audio** (opcional): necesitan Python 3 con `numpy` y `pillow` (`pip install numpy pillow`). Ver [memorias/guia-arte.md](memorias/guia-arte.md).
+**Generadores de arte y audio** (opcional): necesitan Python 3 con `numpy` y `pillow` (`pip install numpy pillow`). Ver [memorias/guia-arte.md](memorias/guia-arte.md). Después de regenerar, `python herramientas/arte/png_sin_cambios.py --restaurar` deja fuera del commit los PNG que solo cambiaron en bytes.
 
 ---
 
