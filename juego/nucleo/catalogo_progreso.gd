@@ -34,10 +34,10 @@ static func dificultades() -> Dictionary:
 			"ritmo": 1.0, "inicio": 1.0, "ganas": 0.35, "salva": 1.0, "jefe_cd": 1.0},
 		"dificil": {"nombre": "Difícil", "desc": "Muchos más enemigos y balas desde el inicio. Mejor botín.", "icono": "dif_dificil", "color": Color("ff8a4a"),
 			"hp": 1.15, "dano": 1.2, "vel": 1.1, "disparo": 0.9, "botin": 1.2, "chatarra": 1.2,
-			"ritmo": 1.4, "inicio": 1.3, "ganas": 0.7, "salva": 0.75, "jefe_cd": 0.8},
+			"ritmo": 1.4, "inicio": 1.3, "ganas": 0.7, "salva": 0.75, "jefe_cd": 0.85},
 		"extremo": {"nombre": "Extremo", "desc": "Se abre al terminar el juego. Sin pizzas. Mucho mejor botín.", "icono": "dif_extremo", "color": Color("ff4a5a"),
 			"hp": 1.45, "dano": 1.5, "vel": 1.2, "disparo": 0.8, "botin": 1.5, "chatarra": 1.5, "sin_pizza": true, "requiere": "terminar",
-			"ritmo": 1.6, "inicio": 1.4, "ganas": 0.85, "salva": 0.65, "jefe_cd": 0.7},
+			"ritmo": 1.6, "inicio": 1.4, "ganas": 0.85, "salva": 0.65, "jefe_cd": 0.75},
 	}
 
 
