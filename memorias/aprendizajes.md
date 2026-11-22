@@ -28,6 +28,7 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
 - **Escala:** con `canvas_items` el texto se dibuja a la resolución de la ventana (por eso se ve "HD"), mientras el arte sigue en píxeles de 640×360.
 - **`config/name` define la carpeta de `user://`.** Cambiarlo deja a los jugadores sin sus partidas.
 - **Los `.uid` se versionan.** Godot 4.7 crea uno por script y los usa para resolver rutas.
+- **`--script` también carga los autoloads.** Un script de herramienta corrido con `--path juego --script ...` hace que `Partida` y `Ajustes` lean y **reescriban las partidas reales** de `user://` (y conviertan una partida antigua). Toda herramienta que corra el proyecto lleva `--pruebas --guardado=<prefijo>` después del `--`.
 
 ## Pruebas
 
@@ -99,3 +100,4 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
 | Fecha | Qué pasó | Dónde |
 |---|---|---|
 | 2026-11-22 | `probar.sh` tenía rutas absolutas y el motor escrito a mano: ahora calcula su ubicación y usa `GODOT` o el PATH | `herramientas/probar.sh` |
+| 2026-11-22 | Al volcar los catálogos con `--script`, los autoloads reescribieron `partida3_1.json`, `global3.json` y `ajustes.cfg` reales (sin pérdida: era la conversión automática). Ahora el volcado exige `--pruebas --guardado=volcado` | `herramientas/volcar_catalogos.gd` |
