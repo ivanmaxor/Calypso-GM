@@ -1069,6 +1069,19 @@ func _flujo_mapa_esc() -> void:
 	_check(_foco() == a.b_opciones, "#68: W desde MENÚ sube a OPCIONES")
 	await _t(KEY_ESCAPE, 10)
 	_check(principal.actual == a and _foco() == a.b_menu, "#68: después de moverse con teclado, Esc vuelve a llevar a MENÚ")
+	# el stick del mando también es moverse
+	_check(a.esc_armado, "#68: Esc deja el Esc armado")
+	var eje := InputEventJoypadMotion.new()
+	eje.axis = JOY_AXIS_LEFT_X
+	eje.axis_value = 1.0
+	Input.parse_input_event(eje)
+	await _cuadros(2)
+	var suelta := InputEventJoypadMotion.new()
+	suelta.axis = JOY_AXIS_LEFT_X
+	suelta.axis_value = 0.0
+	Input.parse_input_event(suelta)
+	await _cuadros(4)
+	_check(not a.esc_armado, "#68: mover el stick desarma el Esc")
 	_mover_mouse(Vector2(-50, -50))
 	principal.ir_mapa()
 	await _cuadros(10)

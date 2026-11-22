@@ -413,6 +413,9 @@ func _input(ev: InputEvent) -> void:
 		return
 	if (ev is InputEventKey or ev is InputEventJoypadButton or ev is InputEventMouseButton) and ev.pressed:
 		esc_armado = false
+	# el stick también mueve el foco (ui_left y compañía traen los ejes): mismo umbral que Controles
+	elif ev is InputEventJoypadMotion and absf(ev.axis_value) > 0.5:
+		esc_armado = false
 
 
 func _campo_input(ev: InputEvent) -> void:
