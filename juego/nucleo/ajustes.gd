@@ -4,18 +4,25 @@ extends Node
 const ARCHIVO := "user://ajustes.cfg"
 const VERSION_AUDIO := 3  # la v0.3 cambió la curva de volumen y agregó la rotación de temas
 
+## Los valores con que parte alguien que nunca tocó las opciones.
+const DEFECTO := {
+	"musica": 50, "efectos": 80, "pantalla_completa": true, "sacudida": 100, "reducir_destellos": false,
+	"atenuar_fondo": 0, "disparo_auto": true, "foco_alternar": false, "escala_chat_rapida": false,
+	"tema_musica": 0, "ver_numeros": true,
+}
+
 var ruta_prueba := ""  # si no está vacía, se guarda ahí en vez del archivo de siempre
-var musica := 50
-var efectos := 80
-var pantalla_completa := true
-var sacudida := 100
-var reducir_destellos := false
-var atenuar_fondo := 0
-var disparo_auto := true
-var foco_alternar := false
-var escala_chat_rapida := false
-var tema_musica := 0  # índice en Sonido.TEMAS; 0 = Aleatorio
-var ver_numeros := true
+var musica: int = DEFECTO.musica
+var efectos: int = DEFECTO.efectos
+var pantalla_completa: bool = DEFECTO.pantalla_completa
+var sacudida: int = DEFECTO.sacudida
+var reducir_destellos: bool = DEFECTO.reducir_destellos
+var atenuar_fondo: int = DEFECTO.atenuar_fondo
+var disparo_auto: bool = DEFECTO.disparo_auto
+var foco_alternar: bool = DEFECTO.foco_alternar
+var escala_chat_rapida: bool = DEFECTO.escala_chat_rapida
+var tema_musica: int = DEFECTO.tema_musica  # índice en Sonido.TEMAS; 0 = Aleatorio
+var ver_numeros: bool = DEFECTO.ver_numeros
 
 
 func _ready() -> void:
@@ -54,6 +61,12 @@ func cargar() -> void:
 		guardar()
 
 
+## Vuelve a los valores de fábrica sin guardar. Lo usan las pruebas al partir de cero.
+func restablecer() -> void:
+	for k in DEFECTO:
+		set(k, DEFECTO[k])
+
+
 func guardar() -> void:
 	var c := ConfigFile.new()
 	c.set_value("audio", "version", VERSION_AUDIO)
@@ -84,5 +97,9 @@ func _ruta() -> String:
 	if ruta_prueba != "":
 		return ruta_prueba
 	if "--pruebas" in OS.get_cmdline_user_args():
+		# cada prueba con el suyo, como las partidas: si no, una corrida parte con lo que cambió la anterior
+		for arg in OS.get_cmdline_user_args():
+			if arg.begins_with("--guardado="):
+				return "user://%s_ajustes.cfg" % arg.get_slice("=", 1)
 		return "user://pruebas_ajustes.cfg"
 	return ARCHIVO
