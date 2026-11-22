@@ -1,0 +1,27 @@
+name: Balance
+description: Algo muy fácil, muy difícil, muy fuerte o muy débil.
+title: "[Balance] "
+labels: ["balance"]
+body:
+  - type: textarea
+    id: que
+    attributes:
+      label: Qué se siente mal
+      description: Arma, habilidad, enemigo, jefe, nivel o dificultad.
+    validations:
+      required: true
+  - type: textarea
+    id: contexto
+    attributes:
+      label: En qué contexto
+      description: Nivel, dificultad, nave, build y cuántas veces lo jugaste.
+  - type: textarea
+    id: medicion
+    attributes:
+      label: Medición (si hay)
+      description: Resultados de bots (probar.sh bot / campana) con al menos 10 partidas por caso, o datos de partidas reales.
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Propuesta
+      description: Qué número cambiarías y en qué catálogo.

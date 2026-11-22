@@ -1,0 +1,25 @@
+name: Idea
+description: Una idea nueva para el juego (contenido, mecánica, pantalla).
+title: "[Idea] "
+labels: ["idea"]
+body:
+  - type: textarea
+    id: que
+    attributes:
+      label: Qué propones
+      description: Explícalo como se vería al jugar.
+    validations:
+      required: true
+  - type: textarea
+    id: por_que
+    attributes:
+      label: Por qué
+      description: Qué problema resuelve o qué hace más divertido. Si te inspiraste en otro juego, cuál.
+  - type: textarea
+    id: archivos
+    attributes:
+      label: Qué partes del juego tocaría
+      description: Por ejemplo catalogo_armas.gd, combate.gd, una pantalla, arte nuevo.
+  - type: markdown
+    attributes:
+      value: "Recuerda: sin datos personales ni claves. Si es una decisión de diseño, al cerrarla se anota en memorias/decisiones.md."

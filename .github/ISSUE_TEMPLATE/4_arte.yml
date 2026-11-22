@@ -1,0 +1,25 @@
+name: Arte
+description: Un dibujo, icono, escena, letra o efecto visual.
+title: "[Arte] "
+labels: ["arte"]
+body:
+  - type: textarea
+    id: que
+    attributes:
+      label: Qué hay que hacer o cambiar
+    validations:
+      required: true
+  - type: textarea
+    id: donde
+    attributes:
+      label: Dónde se ve
+      description: Pantalla, nivel o sprite (nombre del PNG si lo sabes).
+  - type: input
+    id: generador
+    attributes:
+      label: Generador que lo hace
+      description: Ver memorias/guia-arte.md §3. Los PNG generados no se editan a mano.
+  - type: textarea
+    id: capturas
+    attributes:
+      label: Capturas de referencia

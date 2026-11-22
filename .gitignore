@@ -1,0 +1,38 @@
+# Godot 4: caché que el editor regenera solo
+juego/.godot/
+.godot/
+
+# Credenciales de exportación (Godot las guarda aparte de export_presets.cfg)
+export_credentials.cfg
+
+# Exportaciones y builds: el .exe va en GitHub Releases
+build/
+*.exe
+*.pck
+*.zip
+*.tpz
+
+# El motor no va en el repo: el README explica cómo bajarlo
+herramientas/godot/
+
+# Partidas y guardados de prueba
+partida*.json
+global*.json
+*.cfg.bak
+
+# Python
+__pycache__/
+*.pyc
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.tmp
+*.swp
+
+# Secretos
+.env
+.env.*

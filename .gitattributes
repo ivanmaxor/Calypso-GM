@@ -1,0 +1,15 @@
+# Todo el texto con fin de línea LF (Godot y bash lo esperan), también en Windows
+* text=auto eol=lf
+
+# Binarios: nunca se tocan
+*.png binary
+*.jpg binary
+*.gif binary
+*.mp3 binary
+*.ogg binary
+*.wav binary
+*.ttf binary
+*.otf binary
+*.exe binary
+*.zip binary
+*.tpz binary

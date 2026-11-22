@@ -1,0 +1,30 @@
+name: Error
+description: Algo que no funciona como debería.
+title: "[Error] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: que_paso
+    attributes:
+      label: Qué pasó
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Qué esperabas
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Cómo repetirlo
+      description: Nivel, nave, dificultad, armas y lo que hiciste justo antes.
+  - type: input
+    id: version
+    attributes:
+      label: Versión
+      placeholder: v0.3.0
+  - type: textarea
+    id: capturas
+    attributes:
+      label: Capturas o video
+      description: Revisa que no muestren datos personales (nombres de usuario, rutas del PC).
