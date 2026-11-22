@@ -3361,7 +3361,6 @@ func _layout_carta(ca: Dictionary, r: Rect2) -> Dictionary:
 func _dibujar_carta(c: CanvasItem, i: int) -> void:
 	var r := _rect_carta(i)
 	var ca: Dictionary = cartas[i]
-	var lay := _layout_carta(ca, r)
 	var sel := i == carta_sel
 	var tipo: String = ca.tipo
 	var col := UI.C_GRIS
@@ -3379,6 +3378,8 @@ func _dibujar_carta(c: CanvasItem, i: int) -> void:
 	if sel:
 		r.position.y -= 2.0
 		c.draw_rect(r.grow(2), Color.WHITE, false, 1.0)
+	# después de subir la seleccionada: así todo el contenido sube junto con su marco
+	var lay := _layout_carta(ca, r)
 	UI.marco(c, r, UI.C_PANEL, col)
 	c.draw_rect(Rect2(r.position, Vector2(r.size.x, 15)), col.darkened(0.55))
 	var cx := r.position.x + r.size.x / 2.0
