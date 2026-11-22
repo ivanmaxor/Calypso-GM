@@ -78,6 +78,39 @@ func _ready() -> void:
 	fuente_logo = logo
 
 
+## Variantes de letra para comparar en capturas reales (M05). Solo se usan con --letra= en las pruebas:
+## el juego normal sigue con la actual hasta que las personas elijan.
+## - "actual": Barlow suavizada, a la resolución de la ventana (v0.3).
+## - "sin_suavizado": la misma, con bordes duros.
+## - "pixel": la misma, dibujada a la resolución lógica (640×360) y agrandada como el arte.
+## - "mixta": "pixel" en el texto y Jersey 10 (la del logo) en los títulos grandes.
+const LETRAS := ["actual", "sin_suavizado", "pixel", "mixta"]
+
+
+func usar_letra(op: String) -> void:
+	match op:
+		"sin_suavizado":
+			_bordes_duros(fuente, false)
+			_bordes_duros(fuente_negrita, false)
+		"pixel":
+			_bordes_duros(fuente, true)
+			_bordes_duros(fuente_negrita, true)
+		"mixta":
+			_bordes_duros(fuente, true)
+			var j: FontFile = load("res://arte/fuente/Jersey10-Regular.ttf").duplicate()
+			_bordes_duros(j, true)
+			fuente_negrita = j
+
+
+func _bordes_duros(f: FontFile, a_resolucion_logica: bool) -> void:
+	f.antialiasing = TextServer.FONT_ANTIALIASING_NONE
+	# a la resolución lógica, el hinting fuerte abre huecos dentro de las palabras ("rui do")
+	f.hinting = TextServer.HINTING_NONE if a_resolucion_logica else TextServer.HINTING_NORMAL
+	f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
+	if a_resolucion_logica:
+		f.oversampling = 1.0
+
+
 func _cargar_fuente(ruta: String) -> Font:
 	var f: FontFile = load(ruta)
 	f.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
