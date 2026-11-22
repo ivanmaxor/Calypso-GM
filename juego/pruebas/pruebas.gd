@@ -2980,6 +2980,9 @@ func _tests() -> void:
 	_tests_datos()
 	_tests_combate()
 	_tests_desafios_silueta()
+	_tests_xp_tras_desync()
+	_tests_cartas_caben()
+	_tests_desync_visual()
 	_tests_armas()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
@@ -3590,6 +3593,159 @@ func _tests_desafios_silueta() -> void:
 	Partida.d.desafios.append(de0.id)
 	_ok(not ar.premio_en_silueta(de0), "ganado, el premio se ve entero")
 	ar.free()
+	Partida.nuevo()
+
+
+
+## M14: tras el Desync las cartas esperan a que lleguen los Bits de la cascada y al respiro del nivel;
+## fuera de él, nada cambia.
+func _tests_xp_tras_desync() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.jx = 200.0
+	c.jy = 300.0
+	# sin Desync: con un nivel pendiente, las cartas salen al tiro, como antes
+	c.estado = "jugando"
+	c.niveles_pendientes = 1
+	c._revisar_cartas()
+	_ok(c.estado == "cartas", "sin Desync, las cartas salen al tiro")
+	c.estado = "jugando"
+	c.niveles_pendientes = 0
+	# tras la cascada: un Bit lejos de la nave, que vuela de verdad con _tick_gemas
+	c.gemas.clear()
+	c._gema(c.jx, c.jy - 200.0, "bit", 1)
+	c.estado = "cascada"
+	c.cola.clear()
+	c._terminar_cascada()
+	_ok(c.estado == "jugando" and c.tras_desync_t == c.TRAS_DESYNC, "al terminar la cascada empieza la espera")
+	_ok(c.gemas[0].de_cascada, "el Bit de la cascada queda marcado")
+	c.niveles_pendientes = 1
+	c.nivel_flash = 0
+	c._revisar_cartas()
+	_ok(c.estado == "jugando", "no salen las cartas mientras el Bit va en camino")
+	var n := 0
+	while c.estado == "jugando" and n < 400:
+		c.ticks += 1
+		c._tick_gemas()
+		c._revisar_cartas()
+		n += 1
+	_ok(c.estado == "cartas", "después, las cartas salen")
+	_ok(c.gemas.is_empty(), "el Bit llegó a la nave")
+	_ok(n > 5 and n < c.TRAS_DESYNC, "salen cuando llega el Bit, antes del tope (%d cuadros)" % n)
+	_ok(c.nivel_flash == 0, "al abrir las cartas se apaga el destello")
+	# subir de nivel al final de la espera igual da el respiro completo
+	c.estado = "jugando"
+	c.niveles_pendientes = 0
+	c.tras_desync_t = 5
+	c.xp = c.xp_sig - 0.01
+	var g = c.Gema.new()
+	g.tipo = "bit"
+	c._recoger(g)
+	_ok(c.niveles_pendientes >= 1 and c.tras_desync_t >= c.RESPIRO_NIVEL, "el respiro se cumple entero (%d)" % c.tras_desync_t)
+	# aunque el Bit no llegue nunca, la espera tiene tope
+	c.niveles_pendientes = 1
+	c.tras_desync_t = c.TRAS_DESYNC
+	c.gemas.clear()
+	var g2 = c.Gema.new()
+	g2.de_cascada = true
+	g2.x = -9999.0
+	c.gemas.append(g2)
+	n = 0
+	while c.estado == "jugando" and n < 400:
+		c._revisar_cartas()
+		n += 1
+	_ok(c.estado == "cartas" and n <= c.TRAS_DESYNC + 1, "la espera tiene tope (%d cuadros)" % n)
+	# si la cascada cierra el nivel, no hay espera ni destello pegado en la victoria
+	c.estado = "cascada"
+	c.gemas.clear()
+	c.victoria_pendiente = true
+	c._terminar_cascada()
+	_ok(c.estado == "victoria" and c.tras_desync_t == 0, "con victoria no se espera")
+	c.victoria_pendiente = false
+	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M07: en todas las cartas posibles, la sinergia y el OK caben y no se montan sobre la descripción.
+func _tests_cartas_caben() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	var r: Rect2 = c._rect_carta(0)
+	var util := r.size.x - 8.0
+	var cartas := []
+	for id in Datos.ARMAS:
+		for nv in Datos.ARMAS[id].mejoras.size() + 1:
+			cartas.append(c._carta_arma(id, nv))
+	for id in Datos.HABILIDADES:
+		cartas.append(c._carta_hab(id, 0))
+		cartas.append(c._carta_hab(id, 1))
+	for ca in cartas:
+		for ok in [false, true]:
+			if not ca.has("sinergia"):
+				continue
+			ca.sin_ok = ok
+			var l: Dictionary = c._layout_carta(ca, r)
+			var ancho_titulo: float = UI.ancho(l.titulo) + (4.0 + UI.ancho("¡OK!") if ok else 0.0)
+			_ok(ancho_titulo <= util, "el título de sinergia y el OK caben: %s %s" % [ca.nombre, l.titulo])
+			for lin in l.lineas:
+				_ok(UI.ancho(lin) <= util - 18.0, "el nombre de la sinergia cabe: " + lin)
+			_ok(l.y_sin + 14.0 + 13.0 * l.lineas.size() <= r.end.y, "la sinergia no se sale por abajo: " + ca.nombre)
+		var l2: Dictionary = c._layout_carta(ca, r)
+		_ok(l2.y_fin_desc <= l2.y_pips + 2.0, "la descripción no tapa los niveles: %s (%d > %d)" % [ca.nombre, int(l2.y_fin_desc), int(l2.y_pips)])
+	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M15: el número del Desync sube entero aunque el enemigo ya esté sentenciado, sin cambiar el daño.
+func _tests_desync_visual() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.jx = 200.0
+	c.jy = 300.0
+	c.enemigos.clear()
+	var e = c._crear_enemigo({"tipo": "bot", "ancla": [200, 180]})
+	e.x = 200.0
+	e.y = 180.0
+	e.modo = "actuar"
+	c.estado = "desync"
+	c.tiros.clear()
+	# balas de sobra para matarlo varias veces, una por una
+	for k in 30:
+		c.tiros.clear()
+		c.crear_tiro(200.0, 180.0, -PI / 2.0, 0.0, e.hpmax, Datos.tex("tiro2"), 1, false)
+		c._colisiones()
+		c.ticks += 1
+	_ok(c.cola_total < 30, "las balas que pasan de largo no suman a la cascada (%d)" % c.cola_total)
+	_ok(e.cola_vis == 30, "el número que se ve cuenta todas las balas (%d)" % e.cola_vis)
+	var dano: float = e.cola_dano
+	_ok(e.cola_hits == c.cola_total, "el daño en cola solo viene de las balas que pegaron")
+	# una misma bala que se queda varios cuadros sobre el sentenciado suma una sola vez
+	var vis_antes: int = e.cola_vis
+	c.tiros.clear()
+	c.crear_tiro(200.0, 180.0, -PI / 2.0, 0.0, e.hpmax, Datos.tex("tiro2"), 1, false)
+	for k in 5:
+		c._colisiones()
+		c.ticks += 1
+	_ok(e.cola_vis == vis_antes + 1, "una bala quieta sobre el sentenciado suma una vez (%d)" % (e.cola_vis - vis_antes))
+	c.tiros.clear()
+	c.cola_i = 0
+	c.cascada_t = 0.0
+	c.estado = "cascada"
+	c._tick_cascada()
+	_ok(e.cola_vis == 0 and e.cola_hits == 0, "la cascada reinicia el número")
+	_ok(dano > 0.0, "hubo daño en cola")
+	c.queue_free()
 	Partida.nuevo()
 
 
