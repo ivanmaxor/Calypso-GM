@@ -39,6 +39,9 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
   - `flujo_hangar`: el Hangar y el Arsenal (189);
   - `bot <veces> [torpe]`, `campana`, `cap <carpeta> <cuadros>` y `exe`.
 - `--pruebas` abre la ventana fuera de la pantalla. **Nunca se lanza el juego normal para probar:** se le quita la pantalla a quien está trabajando.
+- **`flujo` y `flujo_hangar` corren sin ventana (`--headless`) desde el #47.** Con ventana, la ventana de prueba podía quedar con el foco y recibir las teclas o el mando de quien usaba el PC, y fallaba al azar. Solo abren ventana si les pasas una carpeta de capturas (sin ventana no hay imagen). Eso sí: mientras corre algo con ventana, no escribas ni juegues.
+- **Sin ventana, la ventana mide 64×64**, y el juego de 640×360 queda centrado con franjas. Para pasar un punto lógico a coordenadas de evento del mouse usa `get_viewport().get_final_transform() * punto` (`_raton()` en `pruebas.gd`), nunca `ancho_ventana / 640`: con esa cuenta los clics caían en otro lado y por eso "el mouse necesitaba ventana".
+- **Opciones y teclas de prueba llevan el prefijo de `--guardado`** (`<prefijo>_ajustes.cfg`, `<prefijo>_controles.cfg`), y `--reiniciar` las borra y las deja de fábrica. Antes `pruebas_ajustes.cfg` era uno solo para todas, y una corrida partía con el volumen o el disparo automático que dejó la anterior.
 - `CALYPSO_P` cambia el prefijo de los guardados de prueba y `CALYPSO_D` corre sobre otra copia del repo. Así dos pruebas a la vez no se pisan.
 - **Bots:**
   - bueno (ve todas las balas);
@@ -122,3 +125,4 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
 | 2026-11-22 | Godot reescribe `project.godot` al correr las pruebas: no se commitea | `juego/project.godot` |
 | 2026-11-22 | Pruebas que pasaban sin probar el arreglo (M14, M15, M16): se corrigieron tras la auditoría | `juego/pruebas/pruebas.gd` |
 | 2026-11-22 | Al volcar los catálogos con `--script`, los autoloads reescribieron `partida3_1.json`, `global3.json` y `ajustes.cfg` reales (sin pérdida: era la conversión automática). Ahora el volcado exige `--pruebas --guardado=volcado` | `herramientas/volcar_catalogos.gd` |
+| 2026-11-22 | `flujo` con ventana fallaba al azar (teclas reales del PC y `pruebas_ajustes.cfg` compartido). Arreglado en el #47: recorridos sin ventana, mouse de prueba con la transformación real y opciones de prueba con prefijo | `herramientas/probar.sh`, `juego/pruebas/pruebas.gd`, `juego/nucleo/ajustes.gd` |
