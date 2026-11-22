@@ -102,7 +102,7 @@ Trampas ya pagadas, para no volver a caer. **Agrega una entrada cada vez que alg
   - recarga el PATH con `$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')`, o cierra todas las terminales;
   - en Git Bash funciona con la ruta completa `"/c/Program Files/GitHub CLI/gh.exe"`.
 - **PowerShell 5.1 se come las comillas dobles internas** de `gh api user --jq '"\(.id)+\(.login)@users.noreply.github.com"'`. Saca los valores por separado (`--jq .id` y `--jq .login`) o usa Git Bash.
-- **Pillow y PNG "byte a byte":** según la versión de Pillow, un generador puede dar los mismos píxeles con bytes distintos. Para saber si un PNG cambió de verdad, compara píxeles, no hashes.
+- **Pillow y PNG "byte a byte":** según la versión de Pillow, un generador puede dar los mismos píxeles con bytes distintos. Para saber si un PNG cambió de verdad, compara píxeles, no hashes: `python herramientas/arte/png_sin_cambios.py` (con `--restaurar` deja fuera del commit los que solo cambiaron en bytes).
 - `.claude/` (las copias de trabajo de Claude Code) va en `.git/info/exclude` de cada PC, no en el `.gitignore` del repo.
 - Exportar falla si el `.exe` está abierto o si la carpeta de salida está abierta en otro programa.
 - Rutas con espacios (`Calypso GM`): siempre entre comillas.
