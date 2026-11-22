@@ -18,6 +18,10 @@ const VIDA_GIRO := 110  # una bala que persigue no vive más que esto
 const HITBOX := 3.5
 const IFRAMES_GOLPE := 70
 const IFRAMES_ESCUDO_DESYNC := 45
+## Después de la cascada, las cartas esperan a que la XP llegue a la nave (como máximo esto, en cuadros)
+## y, al subir de nivel, un respiro con la barra destellando antes de elegir (M14). Solo cambia el ritmo.
+const TRAS_DESYNC := 120
+const RESPIRO_NIVEL := 30
 const TIERS_CADENA := [10, 25, 50, 100, 200]
 const MULT_CADENA := [1.0, 1.1, 1.2, 1.35, 1.5, 1.75]
 const CADENA_LARGA := 120.0  # con esta cadena la ventana ya está en su mínimo
@@ -161,6 +165,8 @@ class Gema:
 	var valor := 1
 	var tipo := "bit"
 	var imantada := false
+	## Bit que soltó la cascada: las cartas lo esperan antes de salir (M14).
+	var de_cascada := false
 	var t := 0
 
 
@@ -279,6 +285,8 @@ var nivel_carta := 1
 var xp := 0.0
 var xp_sig := XP_BASE + XP_PASO
 var niveles_pendientes := 0
+var tras_desync_t := 0
+var nivel_flash := 0
 var habs := {}
 var cartas := []
 var carta_sel := 0
@@ -476,8 +484,7 @@ func _physics_process(_d: float) -> void:
 				_tick_cadena()
 				_tick_pistas()
 				_tick_botin()
-				if niveles_pendientes > 0 and estado == "jugando":
-					_abrir_cartas()
+				_revisar_cartas()
 		"desync":
 			_leer_pausa()
 			if estado != "pausa":
@@ -1077,6 +1084,7 @@ func _terminar_cascada() -> void:
 	_limpiar_todo()
 	for g in gemas:
 		g.imantada = true
+		g.de_cascada = g.tipo == "bit"
 	if stats.cura_cascada > 0:
 		curar(stats.cura_cascada)
 		texto(jx, jy - 26, "+%d" % int(stats.cura_cascada), UI.C_VERDE, 1)
@@ -1101,6 +1109,8 @@ func _terminar_cascada() -> void:
 	cascadas.append([cola_total, cascada_kills])
 	cola.clear()
 	cola_total = 0
+	# si la cascada cierra el nivel, no hay cartas que esperar
+	tras_desync_t = 0 if victoria_pendiente else TRAS_DESYNC
 	estado = "victoria" if victoria_pendiente else "jugando"
 	if victoria_pendiente:
 		estado_t = 170.0
@@ -1263,6 +1273,10 @@ func _recoger(g: Gema) -> void:
 				nivel_carta += 1
 				xp_sig = XP_BASE + nivel_carta * XP_PASO
 				niveles_pendientes += 1
+				nivel_flash = RESPIRO_NIVEL
+				# el respiro se cumple entero aunque el nivel suba al final de la espera
+				if tras_desync_t > 0:
+					tras_desync_t = maxi(tras_desync_t, RESPIRO_NIVEL)
 
 
 func _cartel(s: String, c: Color) -> void:
@@ -2471,7 +2485,26 @@ func _frase_ruleta(cuenta: Dictionary, tres: bool) -> String:
 # =========================================================================================
 # CARTAS: ranuras limitadas y sinergias
 # =========================================================================================
+## Abre las cartas si hay niveles pendientes. Tras un Desync, primero deja ver la XP llegando a la nave
+## y la barra subiendo; recién después del respiro del nivel, la elección (M14).
+func _revisar_cartas() -> void:
+	if nivel_flash > 0:
+		nivel_flash -= 1
+	if tras_desync_t > 0:
+		tras_desync_t -= 1
+		var en_camino := false
+		for g in gemas:
+			if g.de_cascada:
+				en_camino = true
+				break
+		if not en_camino and nivel_flash <= 0:
+			tras_desync_t = 0
+	if niveles_pendientes > 0 and estado == "jugando" and tras_desync_t <= 0:
+		_abrir_cartas()
+
+
 func _abrir_cartas() -> void:
+	nivel_flash = 0
 	niveles_pendientes -= 1
 	cartas = _generar_cartas()
 	carta_sel = 1
@@ -3324,6 +3357,11 @@ func dibujar_hud(c: CanvasItem) -> void:
 	c.draw_rect(Rect2(PX + 1, 1, (ANCHO - 2) * clampf(xp / xp_sig, 0.0, 1.0), 11), Color("c49a20"))
 	c.draw_rect(Rect2(PX + 1, 1, (ANCHO - 2) * clampf(xp / xp_sig, 0.0, 1.0), 4), UI.C_ORO)
 	UI.t(c, PX + 4, -2, "Nivel %d" % nivel_carta, Color.WHITE, 1, true)
+	# subiste de nivel tras el Desync: la barra destella antes de las cartas
+	if nivel_flash > 0 and tras_desync_t > 0 and estado == "jugando":
+		if (nivel_flash / 4) % 2 == 0:
+			c.draw_rect(Rect2(PX + 1, 1, ANCHO - 2, 11), Color(1, 1, 1, 0.75))
+		UI.tc(c, PX + ANCHO / 2.0, -2, "¡NIVEL %d!" % nivel_carta, UI.C_ORO, 1, true)
 	# barra de jefe
 	if jefe_actual and not jefe_actual.muerto:
 		var e := jefe_actual

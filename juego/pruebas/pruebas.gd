@@ -2979,6 +2979,7 @@ func _tests() -> void:
 	_tests_partida()
 	_tests_datos()
 	_tests_combate()
+	_tests_xp_tras_desync()
 	_tests_cartas_caben()
 	_tests_desync_visual()
 	_tests_armas()
@@ -3558,6 +3559,79 @@ func _tests_combate() -> void:
 			if ca.tipo == "hab":
 				_ok(not Datos.HABILIDADES[ca.id].has("requiere"), "nada del Desync sin Desync: " + ca.id)
 			_ok(ca.tipo != "cura2", "la Sopaipilla no sale sin Desync")
+	c.queue_free()
+	Partida.nuevo()
+
+
+
+## M14: tras el Desync las cartas esperan a que lleguen los Bits de la cascada y al respiro del nivel;
+## fuera de él, nada cambia.
+func _tests_xp_tras_desync() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.jx = 200.0
+	c.jy = 300.0
+	# sin Desync: con un nivel pendiente, las cartas salen al tiro, como antes
+	c.estado = "jugando"
+	c.niveles_pendientes = 1
+	c._revisar_cartas()
+	_ok(c.estado == "cartas", "sin Desync, las cartas salen al tiro")
+	c.estado = "jugando"
+	c.niveles_pendientes = 0
+	# tras la cascada: un Bit lejos de la nave, que vuela de verdad con _tick_gemas
+	c.gemas.clear()
+	c._gema(c.jx, c.jy - 200.0, "bit", 1)
+	c.estado = "cascada"
+	c.cola.clear()
+	c._terminar_cascada()
+	_ok(c.estado == "jugando" and c.tras_desync_t == c.TRAS_DESYNC, "al terminar la cascada empieza la espera")
+	_ok(c.gemas[0].de_cascada, "el Bit de la cascada queda marcado")
+	c.niveles_pendientes = 1
+	c.nivel_flash = 0
+	c._revisar_cartas()
+	_ok(c.estado == "jugando", "no salen las cartas mientras el Bit va en camino")
+	var n := 0
+	while c.estado == "jugando" and n < 400:
+		c.ticks += 1
+		c._tick_gemas()
+		c._revisar_cartas()
+		n += 1
+	_ok(c.estado == "cartas", "después, las cartas salen")
+	_ok(c.gemas.is_empty(), "el Bit llegó a la nave")
+	_ok(n > 5 and n < c.TRAS_DESYNC, "salen cuando llega el Bit, antes del tope (%d cuadros)" % n)
+	_ok(c.nivel_flash == 0, "al abrir las cartas se apaga el destello")
+	# subir de nivel al final de la espera igual da el respiro completo
+	c.estado = "jugando"
+	c.niveles_pendientes = 0
+	c.tras_desync_t = 5
+	c.xp = c.xp_sig - 0.01
+	var g = c.Gema.new()
+	g.tipo = "bit"
+	c._recoger(g)
+	_ok(c.niveles_pendientes >= 1 and c.tras_desync_t >= c.RESPIRO_NIVEL, "el respiro se cumple entero (%d)" % c.tras_desync_t)
+	# aunque el Bit no llegue nunca, la espera tiene tope
+	c.niveles_pendientes = 1
+	c.tras_desync_t = c.TRAS_DESYNC
+	c.gemas.clear()
+	var g2 = c.Gema.new()
+	g2.de_cascada = true
+	g2.x = -9999.0
+	c.gemas.append(g2)
+	n = 0
+	while c.estado == "jugando" and n < 400:
+		c._revisar_cartas()
+		n += 1
+	_ok(c.estado == "cartas" and n <= c.TRAS_DESYNC + 1, "la espera tiene tope (%d cuadros)" % n)
+	# si la cascada cierra el nivel, no hay espera ni destello pegado en la victoria
+	c.estado = "cascada"
+	c.gemas.clear()
+	c.victoria_pendiente = true
+	c._terminar_cascada()
+	_ok(c.estado == "victoria" and c.tras_desync_t == 0, "con victoria no se espera")
+	c.victoria_pendiente = false
 	c.queue_free()
 	Partida.nuevo()
 
