@@ -2,10 +2,16 @@
 """Mapa del Mundo 1 estilo Plantas vs Zombies 2: un paisaje con un camino de niveles.
 
 Uso: python generar_mapa.py <carpeta juego>
+
+Las posiciones de los niveles se leen de `Datos.NODOS` y `Datos.PORTAL` (juego/nucleo/datos.gd):
+hay una sola fuente. Al final se revisa que ninguna utilería del dibujo quede debajo de lo que el
+juego pinta encima (nodos, recuadros de premio, estrellas, la nave) ni debajo de la franja de
+los planetas de arriba. Si algo choca, se avisa y el script termina con error.
 """
 import math
 import os
 import random
+import re
 import sys
 
 import numpy as np
@@ -15,9 +21,24 @@ JUEGO = sys.argv[1]
 SP = os.path.join(JUEGO, "arte", "sprites")
 W, H = 1040, 360
 BAYER = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) / 16.0
-# deben coincidir con Datos.NODOS en el juego
-NODOS = [(70, 282), (178, 226), (288, 280), (398, 204), (516, 266), (628, 210), (740, 274), (872, 208), (984, 268)]
+
+
+def leer_nodos():
+    """NODOS, ORDEN_NIVELES y PORTAL tal como están en datos.gd."""
+    txt = open(os.path.join(JUEGO, "nucleo", "datos.gd"), encoding="utf-8").read()
+    bloque = re.search(r"const NODOS := \{(.*?)\}", txt, re.S).group(1)
+    nodos = {k: (int(x), int(y)) for k, x, y in re.findall(r'"([^"]+)": Vector2\((-?\d+), (-?\d+)\)', bloque)}
+    m = re.search(r"const PORTAL := Vector2\((-?\d+), (-?\d+)\)", txt)
+    orden = re.findall(r'"([^"]+)"', re.search(r"const ORDEN_NIVELES := \[(.*?)\]", txt).group(1))
+    return nodos, orden, (int(m.group(1)), int(m.group(2)))
+
+
+NIVELES, ORDEN, PORTAL = leer_nodos()
+# el camino pasa por los niveles en orden y termina en el portal
+NODOS = [NIVELES[i] for i in ORDEN] + [PORTAL]
 rng = random.Random(8)
+# lo que el dibujo ocupa con utilería, para revisar choques al final: (nombre, x0, y0, x1, y1)
+OCUPADO = []
 
 
 def hexc(h):
@@ -53,6 +74,7 @@ for _ in range(10):
 
 
 def planeta(cx, cy, r, c1, c2, c3, anillo=None):
+    OCUPADO.append(("planeta", cx - r, cy - r, cx + r, cy + r))
     a = np.array(im)
     for y in range(cy - r, cy + r + 1):
         for x in range(cx - r, cx + r + 1):
@@ -71,9 +93,10 @@ def planeta(cx, cy, r, c1, c2, c3, anillo=None):
         dd.arc([cx - int(r * 1.8), cy - int(r * 0.42), cx + int(r * 1.8), cy + int(r * 0.42)], 200, 500, fill=anillo, width=2)
 
 
-planeta(360, 62, 34, hexc("#3a1a50"), hexc("#6a3070"), hexc("#a85a88"), hexc("#d890a8") + (255,))
-planeta(742, 40, 15, hexc("#2a2050"), hexc("#50408a"), hexc("#8a80c8"))
-planeta(980, 78, 22, hexc("#4a1a30"), hexc("#8a3040"), hexc("#d86048"))
+# los planetas van bajo la franja de arriba, donde el juego dibuja los mundos: si no, parecen uno más
+planeta(360, 100, 34, hexc("#3a1a50"), hexc("#6a3070"), hexc("#a85a88"), hexc("#d890a8") + (255,))
+planeta(700, 80, 14, hexc("#2a2050"), hexc("#50408a"), hexc("#8a80c8"))
+planeta(1010, 104, 16, hexc("#4a1a30"), hexc("#8a3040"), hexc("#d86048"))
 d = ImageDraw.Draw(im)
 
 
@@ -158,6 +181,7 @@ for (x, y) in curva:
 # utilerias
 def llanta(x, y, r=11):
     ry = int(r * 0.62)
+    OCUPADO.append(("llanta", x - r, y - ry, x + r, y + ry))
     d.ellipse([x - r, y - ry, x + r, y + ry], fill=hexc("#17121c") + (255,), outline=hexc("#0b0810") + (255,))
     d.ellipse([x - r + 4, y - ry + 3, x + r - 4, y + ry - 3], fill=hexc("#2a2228") + (255,))
     d.arc([x - r + 1, y - ry + 1, x + r - 1, y + ry - 1], 190, 320, fill=hexc("#3f3438") + (255,))
@@ -171,6 +195,7 @@ def pila_llantas(x, y, n=3):
 def caja(x, y, t=14):
     c = tono("#6a4426", "#5a3c26", "#54463a")
     k = hexc("#14101a") + (255,)
+    OCUPADO.append(("caja", x, y - t - 5, x + t + 5, y))
     d.rectangle([x, y - t, x + t, y], fill=c, outline=k)
     d.polygon([(x, y - t), (x + 5, y - t - 5), (x + t + 5, y - t - 5), (x + t, y - t)], fill=hexc("#8a6038") + (255,), outline=k)
     d.polygon([(x + t, y), (x + t + 5, y - 5), (x + t + 5, y - t - 5), (x + t, y - t)], fill=hexc("#3f2a1e") + (255,), outline=k)
@@ -180,6 +205,7 @@ def caja(x, y, t=14):
 def auto_roto(x, y):
     k = hexc("#14101a") + (255,)
     c = tono("#7a3a2a", "#3f5a6a", "#6a6a3a")
+    OCUPADO.append(("auto", x, y - 21, x + 64, y + 3))
     d.polygon([(x, y), (x + 4, y - 11), (x + 14, y - 12), (x + 22, y - 21), (x + 42, y - 21), (x + 50, y - 12), (x + 62, y - 10), (x + 64, y)], fill=c, outline=k)
     d.polygon([(x + 25, y - 19), (x + 40, y - 19), (x + 45, y - 12), (x + 20, y - 12)], fill=hexc("#1a1a2c") + (255,), outline=k)
     d.ellipse([x + 7, y - 7, x + 19, y + 3], fill=hexc("#15121a") + (255,))
@@ -188,6 +214,7 @@ def auto_roto(x, y):
 
 def tubo(x, y, largo):
     k = hexc("#14101a") + (255,)
+    OCUPADO.append(("tubo", x, y - 8, x + largo + 4, y + 1))
     d.rectangle([x, y - 7, x + largo, y], fill=hexc("#4a5660") + (255,), outline=k)
     d.line([(x + 1, y - 5), (x + largo - 1, y - 5)], fill=hexc("#7a8a94") + (255,))
     d.ellipse([x + largo - 4, y - 8, x + largo + 4, y + 1], fill=hexc("#14101a") + (255,), outline=hexc("#7a8a94") + (255,))
@@ -202,7 +229,10 @@ def sprite(nombre, marco, ancho, x, y, esc=1, tinte=(0.72, 0.68, 0.74)):
     a[..., 1] *= tinte[1]
     a[..., 2] *= tinte[2]
     r = Image.fromarray(a.clip(0, 255).astype(np.uint8), "RGBA").resize((ancho * esc, alto * esc), Image.NEAREST)
-    im.alpha_composite(r, (int(x - r.width / 2), int(y - r.height)))
+    x0, y0 = int(x - r.width / 2), int(y - r.height)
+    ys, xs = np.nonzero(np.array(r)[..., 3])
+    OCUPADO.append((nombre, x0 + int(xs.min()), y0 + int(ys.min()), x0 + int(xs.max()), y0 + int(ys.max())))
+    im.alpha_composite(r, (x0, y0))
 
 
 def sombra(x, y, rx, ry=None):
@@ -212,6 +242,7 @@ def sombra(x, y, rx, ry=None):
 
 # taller de Don Tuerca, junto al primer nivel
 k = hexc("#14101a") + (255,)
+OCUPADO.append(("taller", 2, 118, 114, 222))
 sombra(58, 222, 58, 8)
 d.rectangle([10, 174, 106, 222], fill=hexc("#6a4426") + (255,), outline=k)
 for x in range(16, 104, 14):
@@ -231,29 +262,28 @@ d.rectangle([44, 150, 72, 154], fill=hexc("#c04a0c") + (255,), outline=k)
 # escena principal, de atras hacia adelante
 pila_llantas(138, 176)
 caja(226, 196)
-auto_roto(226, 244)
+auto_roto(205, 236)
 sombra(330, 207, 26)
 sprite("bot", 0, 32, 330, 212, 1)
 pila_llantas(318, 188)
-tubo(340, 186, 46)
+tubo(340, 186, 34)
 sombra(446, 180, 40, 6)
 sprite("grua", 0, 96, 446, 196, 1)
-auto_roto(462, 236)
-caja(420, 300, 16)
-caja(560, 218)
-pila_llantas(590, 188)
+auto_roto(444, 200)
+caja(470, 306, 16)
+pila_llantas(556, 188)
 tubo(566, 300, 58)
 sombra(640, 300, 18)
 sprite("rabioso", 0, 32, 640, 302, 1)
 auto_roto(676, 196)
-caja(700, 318, 15)
-pila_llantas(790, 186)
+caja(690, 330, 15)
 sombra(798, 318, 18)
 sprite("sniper", 0, 40, 798, 322, 1)
 # el Compactador, gigante, vigila el ultimo tramo
-sombra(872, 182, 58, 8)
-sprite("compactador", 0, 128, 872, 192, 1, (0.86, 0.8, 0.82))
-for x, y in ((152, 306), (250, 330), (372, 332), (606, 338), (812, 340), (930, 316)):
+# entre 1-7 y 1-8, para que no quede debajo del premio de 1-8 ni del Modo Infinito
+sombra(806, 182, 50, 7)
+sprite("compactador", 0, 128, 806, 192, 1, (0.86, 0.8, 0.82))
+for x, y in ((152, 306), (250, 330), (340, 334), (606, 338), (812, 340), (930, 316)):
     if rng.random() < 0.7:
         caja(x, y, 12)
     else:
@@ -262,8 +292,8 @@ auto_roto(120, 340)
 auto_roto(486, 348)
 auto_roto(900, 350)
 
-# portal apagado al mundo siguiente
-px, py = 984, 268
+# portal apagado al mundo siguiente: Datos.PORTAL es el centro del aro, que se apoya 28 px más abajo
+px, py = PORTAL[0], PORTAL[1] + 28
 sombra(px, py + 2, 34, 6)
 d.ellipse([px - 26, py - 62, px + 26, py + 4], fill=hexc("#150a2a") + (255,), outline=k)
 d.ellipse([px - 22, py - 58, px + 22, py + 1], fill=hexc("#241048") + (255,))
@@ -276,3 +306,57 @@ d.rectangle([px + 27, py - 34, px + 33, py + 4], fill=hexc("#4a5660") + (255,), 
 salida = os.path.join(SP, "mapa_chatarra.png")
 im.convert("RGB").save(salida)
 print("mapa ok", im.size)
+
+
+# --- revisión: nada del dibujo debajo de lo que el juego pinta encima ------------------------
+# Medidas de juego/pantallas/mapa.gd (si cambian allá, se cambian aquí):
+FRANJA_ARRIBA = 58  # los planetas y la dificultad tapan esta franja de arriba en todo el ancho
+R_NIVEL, R_JEFE, R_EXTRA, R_PORTAL = 15, 18, 21, 21  # R_EXTRA y ALZA_EXTRA: los del arreglo M04 (#4)
+JEFES = {"1-4", "1-8"}  # los niveles con "jefe" en el catálogo: su círculo es más grande
+ALZA_EXTRA = 4  # lo que se apartan el premio y las estrellas de un extra
+NAVE = (-40, 0)  # dónde se estaciona la nave respecto del nivel con el foco (mapa.gd, FICHA)
+
+
+def zonas(nombre, c, extra):
+    """Rectángulos (x0, y0, x1, y1) que el juego dibuja en un nivel, y el radio de su círculo."""
+    x, y = c
+    if nombre == "portal":
+        return [], R_PORTAL + 5
+    alza = ALZA_EXTRA if extra else 0
+    r = (R_EXTRA if extra else (R_JEFE if nombre in JEFES else R_NIVEL)) + 5  # con el anillo del foco
+    z = [("nave", x + NAVE[0] - 14, y + NAVE[1] - 16, x + NAVE[0] + 13, y + NAVE[1] + 17)]
+    if nombre != "1-INF":
+        z.append(("premio", x - 12, y - 48 - alza, x + 12, y - 22 - alza))
+        z.append(("estrellas", x - 21, y + 14 + alza, x + 21, y + 30 + alza))
+    return z, r
+
+
+def cruza(a, b):
+    return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+
+
+def toca_circulo(rect, c, r):
+    nx = min(max(c[0], rect[0]), rect[2])
+    ny = min(max(c[1], rect[1]), rect[3])
+    return (nx - c[0]) ** 2 + (ny - c[1]) ** 2 < r * r
+
+
+choques = []
+todos = dict(NIVELES)
+todos["portal"] = PORTAL
+for cosa, *caja_ in OCUPADO:
+    if caja_[1] < FRANJA_ARRIBA and cosa == "planeta":
+        choques.append("%s en %s queda bajo la franja de los planetas" % (cosa, caja_))
+    for nombre, c in todos.items():
+        z, r = zonas(nombre, c, nombre not in ORDEN and nombre != "portal")
+        if toca_circulo(caja_, c, r):
+            choques.append("%s en %s choca con el nodo %s" % (cosa, caja_, nombre))
+        for que, *zz in z:
+            if cruza(caja_, zz):
+                choques.append("%s en %s queda bajo %s de %s" % (cosa, caja_, que, nombre))
+if choques:
+    print("CHOQUES (%d):" % len(choques))
+    for ch in choques:
+        print("  " + ch)
+    sys.exit(1)
+print("sin choques")
