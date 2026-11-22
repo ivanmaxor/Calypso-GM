@@ -84,7 +84,14 @@ func _mostrar_botones() -> void:
 	b3.visible = Partida.tiene("hangar")
 	var lista: Array = [b2, b1, b3] if b3.visible else [b2, b1]
 	UI.lista_foco(lista, false, false)
-	b1.grab_focus()
+	# Al perder, Don Tuerca aconseja ir al Hangar: lo dice antes de que elijas y el foco queda ahí.
+	# Reintentar sigue a mano, pero es una elección (#65). Retirarse no es perder, y el Infinito siempre termina así.
+	var perdio: bool = not res.ganado and not abandono and modo != "infinito"
+	var foco: Button = b3 if perdio and b3.visible else b1
+	if perdio:
+		load("res://pantallas/dialogo.gd").mostrar(self, "derrota", foco.grab_focus)
+	else:
+		foco.grab_focus()
 
 
 ## Enter o clic mientras se cuenta todo: ver el final de inmediato.
