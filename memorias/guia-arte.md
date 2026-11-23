@@ -34,7 +34,7 @@ Todos se usan como `python herramientas/arte/<script> juego [filtro]`. El filtro
 |---|---|
 | `modelos.py` + `generar_sprites.py` | Enemigos originales, explosiones, fondos de combate, cofres. Las mascotas ya **no** salen de aquí |
 | `generar_v2.py` | Naves (48×48, 10 cuadros), iconos de las armas, habilidades y piezas originales, objetos, retratos y planetas |
-| `generar_mapa.py` | El mapa del Mundo 1 (1040×360, con tramado Bayer). Lee `Datos.NODOS` y `Datos.PORTAL` desde `datos.gd` y dibuja el camino por ahí: si cambian los nodos, se regenera. Al final revisa que ninguna utilería quede bajo un nodo, su premio, sus estrellas, la nave estacionada o la franja de los planetas, y falla si algo choca |
+| `generar_mapa.py` | El mapa del Mundo 1 (1040×360, con tramado Bayer). Lee `Datos.NODOS`, `Datos.PORTAL` y `Datos.RAMALES` desde `datos.gd` y dibuja el camino por ahí, más un sendero angosto para cada desvío: si cambian los nodos, se regenera. Al final revisa que ninguna utilería quede bajo un nodo, su premio, sus estrellas, la nave estacionada, un desvío o la franja de los planetas, y falla si algo choca |
 | `generar_v3_iconos.py` | Iconos nuevos, proyectiles y objetos de combate, la Mosca y todas las mascotas. `--revisar` comprueba nombres, tamaños y transparencia |
 | `generar_v3_escenas.py` | Don Tuerca de medio cuerpo, el Hangar (fondo + 6 estaciones + los `hangar_delante_*`) y `bala_pellet`. **Escribe las posiciones del Hangar en `juego/nucleo/sala_hangar.gd`**. Con `--montajes=<carpeta>` arma maquetas como se ven en el juego |
 | `hoja_v2.py`, `vista_previa.py` | Hojas de revisión ampliadas |

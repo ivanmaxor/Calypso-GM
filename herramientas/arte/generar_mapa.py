@@ -30,10 +30,13 @@ def leer_nodos():
     nodos = {k: (int(x), int(y)) for k, x, y in re.findall(r'"([^"]+)": Vector2\((-?\d+), (-?\d+)\)', bloque)}
     m = re.search(r"const PORTAL := Vector2\((-?\d+), (-?\d+)\)", txt)
     orden = re.findall(r'"([^"]+)"', re.search(r"const ORDEN_NIVELES := \[(.*?)\]", txt).group(1))
-    return nodos, orden, (int(m.group(1)), int(m.group(2)))
+    requiere = dict(re.findall(r'"([^"]+)": \{"requiere": "([^"]+)"', re.search(r"const EXTRAS := \{(.*)\}", txt).group(1)))
+    ramales = re.findall(r'"([^"]+)"', re.search(r"const RAMALES := \[(.*?)\]", txt).group(1))
+    # cada ramal va del nivel que abre el extra hasta el extra
+    return nodos, orden, (int(m.group(1)), int(m.group(2))), [(requiere[e], e) for e in ramales]
 
 
-NIVELES, ORDEN, PORTAL = leer_nodos()
+NIVELES, ORDEN, PORTAL, RAMALES = leer_nodos()
 # el camino pasa por los niveles en orden y termina en el portal
 NODOS = [NIVELES[i] for i in ORDEN] + [PORTAL]
 rng = random.Random(8)
@@ -172,11 +175,25 @@ def catmull(pts, pasos=26):
     return r
 
 
+def recta(a, b, paso=2.0):
+    """Puntos cada `paso` px de a hasta b, en línea recta: igual que el punteado de mapa.gd."""
+    largo = math.hypot(b[0] - a[0], b[1] - a[1])
+    n = max(1, int(largo / paso))
+    return [(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n) for k in range(n + 1)]
+
+
+# los desvíos (Datos.RAMALES): un sendero más angosto que sale del nivel que abre el extra
+ANCHO_RAMAL = (11, 7, 8, 4)  # borde y centro, en radios x e y; el camino usa (16, 10, 12, 7)
+RAMAL_PUNTOS = [p for a, b in RAMALES for p in recta(NIVELES[a], NIVELES[b])]
 curva = catmull(NODOS)
 for (x, y) in curva:
     d.ellipse([x - 16, y - 10, x + 16, y + 10], fill=hexc("#4c3628") + (255,))
+for (x, y) in RAMAL_PUNTOS:
+    d.ellipse([x - ANCHO_RAMAL[0], y - ANCHO_RAMAL[1], x + ANCHO_RAMAL[0], y + ANCHO_RAMAL[1]], fill=hexc("#4c3628") + (255,))
 for (x, y) in curva:
     d.ellipse([x - 12, y - 7, x + 12, y + 7], fill=hexc("#5c4230") + (255,))
+for (x, y) in RAMAL_PUNTOS:
+    d.ellipse([x - ANCHO_RAMAL[2], y - ANCHO_RAMAL[3], x + ANCHO_RAMAL[2], y + ANCHO_RAMAL[3]], fill=hexc("#5c4230") + (255,))
 
 # utilerias
 def llanta(x, y, r=11):
@@ -376,6 +393,11 @@ for cosa, *caja_ in OCUPADO:
         for que, *zz in z:
             if cruza(caja_, zz):
                 choques.append("%s en %s queda bajo %s de %s" % (cosa, caja_, que, nombre))
+    # nada encima de un desvío: taparía el sendero que lleva al extra
+    for x, y in RAMAL_PUNTOS:
+        if cruza(caja_, (x - ANCHO_RAMAL[0], y - ANCHO_RAMAL[1], x + ANCHO_RAMAL[0], y + ANCHO_RAMAL[1])):
+            choques.append("%s en %s queda sobre el ramal en (%d, %d)" % (cosa, caja_, x, y))
+            break
 if choques:
     print("CHOQUES (%d):" % len(choques))
     for ch in choques:

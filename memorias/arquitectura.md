@@ -142,7 +142,7 @@ La meta de cadena de la 3.ª estrella sale siempre de `Partida.meta_cadena(id)`:
 
 **Un nivel**
 1. Entrada en `CatalogoNiveles.niveles()`: nombre, desc, duración, estrellas, premio, enemigos, pistas, ritmo, mezcla e hitos.
-2. Su posición en `Datos.NODOS`, y en `ORDEN_NIVELES` o `EXTRAS`.
+2. Su posición en `Datos.NODOS`, y en `ORDEN_NIVELES` o `EXTRAS`. Un extra que va por un desvío (un ramal de tierra desde el nivel que lo abre, como la Ruleta) también va en `Datos.RAMALES`.
 3. Regenerar el mapa (`generar_mapa.py`): lee las posiciones de `datos.gd` y avisa si un nodo nuevo cae encima de la utilería del dibujo.
 4. Diálogos `antes_<id>` y `despues_<id>` en `catalogo_dialogos.gd`.
 

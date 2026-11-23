@@ -186,15 +186,19 @@ func _catmull() -> Array:
 	return r
 
 
-## La línea punteada que une un nivel extra con el camino: sale del tramo que sigue al nivel que lo abre.
+## La línea punteada que une un nivel extra con el camino. Si va por un desvío (Datos.RAMALES), sigue
+## el ramal que dibuja generar_mapa.py desde el nivel que lo abre; si no, sale de la mitad del tramo siguiente.
 func _punteado(id: String) -> Array:
-	var i: int = Datos.ORDEN_NIVELES.find(Datos.EXTRAS[id].requiere)
-	var desde: Vector2 = curva[i][11]
+	var req: String = Datos.EXTRAS[id].requiere
+	var ramal: bool = id in Datos.RAMALES
+	var desde: Vector2 = Datos.NODOS[req] if ramal else curva[Datos.ORDEN_NIVELES.find(req)][11]
 	var hasta: Vector2 = Datos.NODOS[id]
 	var r := []
 	var largo: float = desde.distance_to(hasta)
-	var d := 8.0
-	while d < largo - 16.0:
+	# en un ramal, los puntos parten en el borde del nivel y llegan al del extra
+	var d := 24.0 if ramal else 8.0
+	var fin := 24.0 if ramal else 16.0
+	while d < largo - fin:
 		r.append(desde.lerp(hasta, d / largo))
 		d += 8.0
 	return r
