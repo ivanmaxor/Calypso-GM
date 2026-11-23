@@ -4,6 +4,72 @@ La más reciente arriba. Cada entrada: fecha, **quién**, qué se hizo, archivos
 
 ---
 
+### 2026-11-22 (noche) y 2026-11-23: Alexander (con Claude Code)
+**Qué se hizo** (siguiendo el plan de Iván en el #44)
+- **Prueba con personas de la rc.1:** Alexander jugó 1 h 30 min en Difícil, hasta el 1-5. Sus notas están en el #44 y de ellas salieron los Issues #57 a #68.
+- **Tanda 1, arreglos:**
+
+  | PR | Issue | Qué hace |
+  |---|---|---|
+  | #69 | #57 | Frase de las Moscas ("La mala… La buena…"), y regla `Closes #N` en la guía y en la plantilla de PR |
+  | #70 | #68 | En el mapa, el segundo Esc sale aunque el mouse haya movido el foco (`esc_armado`); el stick también desarma |
+  | #71 | #67 | Barra de las mascotas llena mientras esperan (`pet_busca`) |
+  | #72 | #65 | Al perder, Don Tuerca aconseja el Hangar antes de elegir (solo si ya hay Hangar), el foco queda en HANGAR y se ignoran clics apurados (0,35 s) |
+  | #73 | #64 | "¡OTRA SUBIDA! (2 de 3)" cuando hay subidas en cola (no era un cambio de cartas; Alexander usa mouse) |
+  | #75 | #66 | Los premios de desafío que caen antes del Arsenal dicen dónde se van a ver |
+
+- **Tanda 2, balance** (solo bots; los PR van marcados "A decidir por Iván"):
+  - #78 (#61): mejora de piezas por dificultad, Fácil 12 %, Normal 10 % y Difícil 8 %;
+  - #81 (#62): meta de cadena x1,5 en Difícil y Extremo;
+  - #60, Streamer Beam: medido, sin cambio. No está sobre la meta; solo destaca contra enemigos en columna. Queda como comentario en el Issue.
+- **Tanda 3, visuales con opciones en capturas** (deciden Iván y Alexander):
+  - #79 (#58): aro de la hitbox, por defecto "cercana";
+  - #77 (#63): Hangar sin foco al entrar y luz 0,55;
+  - #80 (#59): la Ruleta como desvío bajo el 1-4.
+- **Tanda 4, borradores para la v0.5:** #74, propuesta del gancho narrativo (Refs #55), y #76, diseño del Mundo 2 (Refs #56). Ninguno toca código y ninguno abrió `docs/spoilers/`.
+- **Cómo se trabajó:**
+  - casi todo lo hicieron agentes en paralelo, cada uno en su copia (`git worktree`) y con su prefijo de pruebas;
+  - cada PR lo revisó la sesión principal, que corrió sus pruebas;
+  - una auditoría de solo lectura de los PR #69 a #73 encontró 3 problemas reales, ya corregidos: el stick en el #70, y el clic apurado y el consejo sin Hangar en el #72.
+
+**Archivos o módulos tocados** (entre todos los PR)
+- `combate/combate.gd`, `pantallas/mapa.gd`, `pantallas/resultado.gd`, `escenas/principal.gd`, `pantallas/premio.gd`, `pantallas/hangar.gd`, `pantallas/hangar_sala.gd`, `pantallas/pausa.gd`, `pantallas/panel_nivel.gd`.
+- `nucleo/catalogo_dialogos.gd`, `nucleo/catalogo_progreso.gd`, `nucleo/partida.gd`, `nucleo/datos.gd`.
+- `pruebas/pruebas_*.gd`, `herramientas/arte/generar_mapa.py`, `herramientas/inventario.py`, `herramientas/volcar_catalogos.gd`, el sprite del mapa.
+- `memorias/` (decisiones, guía de arte, arquitectura, aprendizajes, inventario, guía de colaboración), `.github/pull_request_template.md`, `docs/capturas/m01`, `m02` y `m04`, y `docs/08` y `docs/09`.
+
+**Commits** (punta de cada rama)
+- #69 `521be4d`, #70 `17d239f`, #71 `4603c9b`, #72 `db393e8`, #73 `3766dfd`, #75 `6067326`;
+- #77 `921afbf`, #78 `628086e`, #79 `34b9f1a`, #80 `46cb75e`, #81 `226ec78`;
+- #74 `84ac854`, #76 `6d69ba3`.
+
+**Verificado**
+- Cada PR con `import`, `tests`, `flujo` y `flujo_hangar` en verde. Las pruebas nuevas de cada arreglo fallan sin el arreglo.
+- Los que tocan combate, también con bots.
+- Las capturas de cada opción visual se miraron.
+- **#78 y #81 juntos** (rama local, sin subir):
+  - `tests` 11.455;
+  - `campana`: Fácil 23/24, Normal 24/24 y Difícil 22/24, todo a la primera.
+
+**Sin verificar**
+- Nada de esto lo jugó una persona todavía: va en la rc.2.
+- El stick y el mando, solo con eventos simulados.
+
+**Pendientes**
+- **Iván:**
+  - revisar y fusionar #69 a #81;
+  - elegir las opciones de #77, #79 y #80;
+  - decidir el balance de #78 y #81;
+  - aprobar o comentar los borradores #74 y #76;
+  - publicar la rc.2.
+- **Alexander:**
+  - votar la letra (#34);
+  - aprobar el #54 de Iván;
+  - jugar la rc.2.
+- **Choques triviales al fusionar:** las líneas nuevas en `_tests()` de `pruebas_reglas.gd` (#71, #73, #75, #78, #79 y #81) y las entradas nuevas arriba de `memorias/decisiones.md` (#77 y #79). Se conservan todas.
+
+---
+
 ### 2026-11-22 (tarde): Alexander (con Claude Code)
 **Qué se hizo** (siguiendo el plan de Iván en el PR #41)
 - Revisé el #48 (registro de Iván). La aprobación la da Alexander desde su cuenta.
