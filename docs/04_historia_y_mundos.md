@@ -1,12 +1,12 @@
 # 4. Historia y mundos
 
-La historia de la Odisea quedó descartada (está en [historial/](historial/historia_odisea_descartada.md)). Hay tres opciones nuevas y **todavía no se elige una**. **Las tres tienen un giro fuerte que este archivo no cuenta**, para que el juego sorprenda a quien lo juegue.
+La historia de la Odisea quedó descartada (está en [historial/](historial/historia_odisea_descartada.md)). Había tres opciones nuevas, y **el 2026-11-22 se eligió la A, Buen Chico**. Las otras dos quedan aquí como referencia. **Las tres tienen un giro fuerte que este archivo no cuenta**, para que el juego sorprenda a quien lo juegue.
 
 > **Spoilers:** los giros están en [spoilers/historias_con_giro.md](spoilers/historias_con_giro.md). No lo abras si no quieres saberlos: después no hay vuelta atrás.
 
 ## Las tres opciones
 
-### A. Buen Chico (la provisional)
+### A. Buen Chico (la elegida)
 
 > Encuentras un cachorrito alienígena en un basural espacial. Se come lo que le das y escupe piezas mejores.
 
@@ -30,7 +30,7 @@ Un mundo es como Galaga, otro como Tetris con las piezas cayéndote encima, otro
 
 Es el chatarrero loco del basural, y te habla como Dave en Plantas vs Zombies: te explica las cosas y dice leseras. Calypso le lleva la contra. Sirve para las tres historias, por eso ya está en el juego.
 
-Mientras no se elija, el juego sigue la A, pero nada queda amarrado: Don Tuerca solo habla del basural.
+El juego sigue la A. Lo que falta es el **gancho narrativo**: que desde el principio se entienda por qué estás ahí y para qué te haces más fuerte (ver `memorias/fases.md`, v0.5).
 
 ## Comparación
 

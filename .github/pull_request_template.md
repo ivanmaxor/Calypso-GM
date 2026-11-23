@@ -1,5 +1,5 @@
 ## Qué cambia
-<!-- Qué hace este PR y por qué. Enlaza el Issue: "Cierra #N". -->
+<!-- Qué hace este PR y por qué. Enlaza el Issue con "Closes #N" (en inglés: con "Cierra #N" GitHub no lo cierra solo). -->
 
 ## Pruebas que corrí
 - [ ] `probar.sh import` sin errores

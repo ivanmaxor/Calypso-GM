@@ -16,8 +16,11 @@ func _tests() -> void:
 	_tests_armas()
 	_tests_hangar_delante()
 	_tests_hitbox_indicador()
+	_tests_consejo_derrota()
+	_tests_barra_mascota()
 	_tests_pruebas_aisladas()
 	_tests_desafios_antes_del_arsenal()
+	_tests_otra_subida()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
 
@@ -42,6 +45,56 @@ func _tests_pruebas_aisladas() -> void:
 	_ok(Controles.a.obtener("esquivar", "teclado", 1) == "key:L", "#47: --reiniciar deja las teclas de fábrica")
 	Ajustes.musica = musica
 	Ajustes.disparo_auto = auto
+
+
+## #65: el consejo "anda al Hangar" solo sale al perder de verdad y si ya hay Hangar.
+func _tests_consejo_derrota() -> void:
+	var tenia: bool = Partida.tiene("hangar")
+	var r = load("res://pantallas/resultado.gd").new()
+	r.res = {"ganado": false}
+	r.modo = "normal"
+	Partida.d.desbloqueos.erase("hangar")
+	_ok(r.perdio() and not r.aconsejar_hangar(), "#65: sin Hangar (antes de ganar el 1-1) no se aconseja ir al Hangar")
+	Partida.desbloquear("hangar")
+	_ok(r.aconsejar_hangar(), "#65: con Hangar, al perder se aconseja ir al Hangar")
+	r.abandono = true
+	_ok(not r.aconsejar_hangar(), "#65: retirarse no es perder: sin consejo")
+	r.abandono = false
+	r.modo = "infinito"
+	_ok(not r.aconsejar_hangar(), "#65: en el Modo Infinito siempre se termina cayendo: sin consejo")
+	r.free()
+	if not tenia:
+		Partida.d.desbloqueos.erase("hangar")
+
+
+## #67: una mascota lista y sin a quién atacar mantiene la barra llena; cuando aparece algo, actúa y la vacía.
+func _tests_barra_mascota() -> void:
+	var antes: String = Partida.d.mascota
+	Partida.dar_mascota("mordisco")
+	Partida.d.mascota = "mordisco"
+	var c = _combate_prueba("pistola", 1, false)
+	_ok(c.tiene_mascota and c.pet_ia == "come", "#67: el combate de prueba trae a Mordisco")
+	var recarga: float = Partida.pet_recarga()
+	var lleno_desde := -1
+	var minimo_despues := 1.0
+	for i in int(recarga) + 120:
+		c._tick_mascota()
+		var listo: float = 1.0 - clampf(c.pet_cd / recarga, 0.0, 1.0)
+		if lleno_desde < 0 and listo >= 1.0:
+			lleno_desde = i
+		elif lleno_desde >= 0:
+			minimo_despues = minf(minimo_despues, listo)
+	_ok(lleno_desde >= 0, "#67: sin balas cerca, la barra de Mordisco se llena")
+	_ok(minimo_despues >= 1.0, "#67: y se queda llena mientras no hay balas (mínimo %.3f)" % minimo_despues)
+	# aparece una bala al lado: se la come en cuanto vuelve a buscar, y la barra parte de cero
+	var nams: int = c.nams
+	_bala_prueba(c, c.px + 4.0, c.py)
+	for i in 30:
+		c._tick_mascota()
+	_ok(c.nams == nams + 1 and c.bn == 0, "#67: con una bala cerca, Mordisco se la come")
+	_ok(c.pet_cd > recarga - 31.0, "#67: después de comer, la barra vuelve a cargarse desde cero")
+	c.queue_free()
+	Partida.d.mascota = antes
 
 
 ## M02: lo del fondo que va delante de una estación es un recorte exacto del fondo, en su lugar, y tapa a alguna estación.
@@ -1045,3 +1098,94 @@ func _tests_desafios_antes_del_arsenal() -> void:
 	_ok(pn.has_method("donde_se_ve") and pn.donde_se_ve() == "", "#66: un premio de nivel no lleva el aviso del Arsenal")
 	pn.free()
 	Partida.nuevo()
+
+
+## #64: al elegir una carta con otra subida en cola salen cartas nuevas al tiro. El título lo dice
+## ("¡OTRA SUBIDA! (2 de 3)") para que no parezca un cambio de cartas. Y el clic izquierdo elige: no cambia.
+func _tests_otra_subida() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.jx = 200.0
+	c.jy = 300.0
+	var destello: int = c.get_script().get_script_constant_map().get("DESTELLO_SUBIDA", 24)
+	# una sola subida: el título de siempre
+	c.estado = "jugando"
+	c.niveles_pendientes = 1
+	c._revisar_cartas()
+	_ok(c.estado == "cartas" and _titulo_cartas(c) == "¡SUBISTE DE NIVEL!", "con una subida, el título de siempre (%s)" % _titulo_cartas(c))
+	c.elegir_carta(0)
+	_ok(c.estado == "jugando", "con una subida, al elegir se vuelve a jugar")
+	# tres subidas en cola, como tras un Desync
+	c.cambios_restantes = 1
+	c.niveles_pendientes = 3
+	c._revisar_cartas()
+	_ok(_titulo_cartas(c) == "¡SUBISTE DE NIVEL! (1 de 3)", "la primera tanda avisa cuántas vienen (%s)" % _titulo_cartas(c))
+	_ok(c.get("subida_flash") == 0, "la primera tanda no destella el título")
+	c.elegir_carta(0)
+	_ok(c.estado == "cartas", "con otra subida en cola, al elegir salen cartas nuevas")
+	_ok(_titulo_cartas(c) == "¡OTRA SUBIDA! (2 de 3)", "la tanda nueva dice que es otra subida (%s)" % _titulo_cartas(c))
+	_ok(c.get("subida_flash") == destello, "y el título destella")
+	_ok(c.cambios_restantes == 1, "elegir no gasta cambios de cartas")
+	_ok(c.carta_t == 0, "la tanda nueva espera antes de aceptar otro clic")
+	for k in destello:
+		c._tick_cartas()
+	_ok(c.get("subida_flash") == 0, "el destello dura lo suyo y se apaga")
+	# cambiar cartas no es otra subida
+	c.cambiar_cartas()
+	_ok(c.cambios_restantes == 0 and _titulo_cartas(c) == "¡OTRA SUBIDA! (2 de 3)", "cambiar cartas no cuenta como otra subida")
+	_ok(c.get("subida_flash") == 0, "cambiar cartas no destella el título")
+	c.elegir_carta(0)
+	_ok(_titulo_cartas(c) == "¡OTRA SUBIDA! (3 de 3)", "la tercera tanda también avisa (%s)" % _titulo_cartas(c))
+	c.elegir_carta(0)
+	_ok(c.estado == "jugando", "después de la última, se vuelve a jugar")
+	# la subida siguiente empieza de nuevo
+	c.niveles_pendientes = 1
+	c._revisar_cartas()
+	_ok(_titulo_cartas(c) == "¡SUBISTE DE NIVEL!", "una subida suelta después vuelve al título de siempre (%s)" % _titulo_cartas(c))
+	c.elegir_carta(0)
+	for s in ["¡SUBISTE DE NIVEL! (1 de 9)", "¡OTRA SUBIDA! (9 de 9)"]:
+		_ok(UI.ancho(s, 2) <= c.ANCHO - 8, "el título grande cabe: %s (%.0f px)" % [s, UI.ancho(s, 2)])
+	# el clic izquierdo de verdad sobre una carta la elige y no gasta cambios (hipótesis 2 del #64)
+	var izq := InputEventMouseButton.new()
+	izq.button_index = MOUSE_BUTTON_LEFT
+	izq.pressed = true
+	var der := InputEventMouseButton.new()
+	der.button_index = MOUSE_BUTTON_RIGHT
+	der.pressed = true
+	_ok(not InputMap.event_is_action(izq, "desync"), "de fábrica, el clic izquierdo no es Desync")
+	_ok(InputMap.event_is_action(der, "desync"), "de fábrica, el clic derecho sí es Desync")
+	c.cambios_restantes = 1
+	c.niveles_pendientes = 2
+	c._revisar_cartas()
+	c.carta_t = 18
+	_clic_ya(c._rect_carta(2).get_center(), MOUSE_BUTTON_LEFT, true)
+	_ok(c.carta_t == 0, "el clic llegó a la carta: salió otra tanda")
+	_ok(c.cambios_restantes == 1, "el clic izquierdo no gasta cambios")
+	_ok(_titulo_cartas(c) == "¡OTRA SUBIDA! (2 de 2)", "el clic izquierdo eligió la carta y salió la otra subida (%s)" % _titulo_cartas(c))
+	# con el botón todavía apretado, el cuadro de las cartas tampoco lo toma como Desync
+	c.carta_t = 18
+	c._tick_cartas()
+	_ok(c.cambios_restantes == 1, "el cuadro siguiente tampoco cambia las cartas")
+	_clic_ya(c._rect_carta(2).get_center(), MOUSE_BUTTON_LEFT, false)
+	c.queue_free()
+
+
+## El título de la pantalla de cartas. Sin titulo_cartas() (antes del #64) era siempre el mismo.
+func _titulo_cartas(c) -> String:
+	return c.titulo_cartas() if c.has_method("titulo_cartas") else "¡SUBISTE DE NIVEL!"
+
+
+## Un clic del mouse que llega al tiro a los _input, sin esperar cuadros (para tests sin ventana).
+func _clic_ya(pos: Vector2, boton: MouseButton, apretado: bool) -> void:
+	var ev := InputEventMouseButton.new()
+	ev.position = _raton(pos)
+	ev.global_position = ev.position
+	ev.button_index = boton
+	ev.pressed = apretado
+	if apretado:
+		ev.button_mask = MOUSE_BUTTON_MASK_LEFT if boton == MOUSE_BUTTON_LEFT else MOUSE_BUTTON_MASK_RIGHT
+	Input.parse_input_event(ev)
+	Input.flush_buffered_events()

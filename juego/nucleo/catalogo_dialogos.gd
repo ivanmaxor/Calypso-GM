@@ -15,7 +15,7 @@ static func dialogos() -> Dictionary:
 		["tuerca", "Te abrí el HANGAR. Ahí le pones a la nave las piezas que vayas encontrando. Antes era el baño, pero casi no se nota."],
 		["calypso", "Se nota."]],
 	"antes_1-2": [["tuerca", "Ojo, que ahora vienen los Rabiosos. Parpadean y se te tiran encima. Como mi ex suegra."],
-		["tuerca", "Y después llegan las Moscas: chiquititas, en montón y te persiguen como cobrador. La buena: caen de un balazo."],
+		["tuerca", "Y después llegan las Moscas. La mala: son chiquititas, vienen en montón y te persiguen como cobrador. La buena: caen de un balazo."],
 		["calypso", "No son moscas, son drones. Pero zumban igual de molesto."],
 		["tuerca", "Si te ves apretado, aprieta {esquivar} y esquiva. ¿Cachai?"]],
 	"despues_1-2": [["tuerca", "Mira lo que encontré: un reactor roto. Le pegué dos patadas y ahora hace algo rarísimo."],
