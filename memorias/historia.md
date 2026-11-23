@@ -6,11 +6,11 @@
 
 Un bullet hell con progreso tipo Survivor!.io. Pilotas una nave en un basural espacial, esquivas lluvias de balas, subes de nivel en cada partida eligiendo armas y habilidades, y entre partidas armas tu nave en el Hangar. El tono es de humor gamer, con un guía chatarrero que habla a la chilena.
 
-## La historia (todavía sin elegir)
+## La historia: A. Buen Chico (elegida el 2026-11-22)
 
-Hay tres opciones, explicadas sin giros en [docs/04_historia_y_mundos.md](../docs/04_historia_y_mundos.md):
+Se eligió la **A**. Las tres opciones están explicadas sin giros en [docs/04_historia_y_mundos.md](../docs/04_historia_y_mundos.md):
 
-- **A. Buen Chico** (la que se usa por ahora): eres chatarrero, y tu mascota alienígena hace posibles las fusiones. Recorren mundos vivos tratando de salvarlos de algo llamado **el Hambre**.
+- **A. Buen Chico** (la elegida): eres chatarrero, y tu mascota alienígena hace posibles las fusiones. Recorren mundos vivos tratando de salvarlos de algo llamado **el Hambre**.
 - **B. Clon 412:** despiertas sin memoria con la misión de matar a siete señores de la guerra que te recuerdan de vidas anteriores.
 - **C. Cartucho:** vives dentro de una consola vieja cuyos juegos se están borrando.
 

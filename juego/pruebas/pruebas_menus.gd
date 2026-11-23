@@ -450,6 +450,7 @@ func _flujo() -> void:
 			await _flujo_migracion()
 			await _flujo_importar()
 			await _flujo_mapa_extras()
+			await _flujo_mapa_esc()
 			await _flujo_nueva_plus()
 			await _flujo_premios()
 			await _flujo_resultados()
@@ -1053,6 +1054,48 @@ func _flujo_mapa_extras() -> void:
 	_foto("panel_infinito_con_record")
 	await _t(KEY_ESCAPE, 10)
 	_foto("mapa_mundo_terminado")
+
+
+## #68: en el mapa, el segundo Esc sale al título aunque el mouse le haya quitado el foco a MENÚ.
+func _flujo_mapa_esc() -> void:
+	principal.ir_mapa()
+	await _cuadros(10)
+	var a = principal.actual
+	var nodo: Control = a.nodos[Partida.nivel_actual()]
+	await _t(KEY_ESCAPE)
+	_check(_foco() == a.b_menu, "#68: el primer Esc lleva a MENÚ")
+	# el mouse pasa por encima de un nivel y le quita el foco a MENÚ, como jugando de verdad
+	get_tree().root.notification(Node.NOTIFICATION_VP_MOUSE_ENTER)
+	_mover_mouse(nodo.get_global_rect().get_center())
+	await _cuadros(4)
+	_check(_foco() == nodo, "#68: pasar el mouse por un nivel le da el foco")
+	await _t(KEY_ESCAPE, 10)
+	_check(principal.actual != a and principal.actual.has_signal("jugar"), "#68: el segundo Esc sale al título aunque el mouse movió el foco")
+	# con teclado sí se vuelve a empezar: moverse es hacer otra cosa
+	principal.ir_mapa()
+	await _cuadros(10)
+	a = principal.actual
+	await _t(KEY_ESCAPE)
+	await _t(KEY_W)
+	_check(_foco() == a.b_opciones, "#68: W desde MENÚ sube a OPCIONES")
+	await _t(KEY_ESCAPE, 10)
+	_check(principal.actual == a and _foco() == a.b_menu, "#68: después de moverse con teclado, Esc vuelve a llevar a MENÚ")
+	# el stick del mando también es moverse
+	_check(a.esc_armado, "#68: Esc deja el Esc armado")
+	var eje := InputEventJoypadMotion.new()
+	eje.axis = JOY_AXIS_LEFT_X
+	eje.axis_value = 1.0
+	Input.parse_input_event(eje)
+	await _cuadros(2)
+	var suelta := InputEventJoypadMotion.new()
+	suelta.axis = JOY_AXIS_LEFT_X
+	suelta.axis_value = 0.0
+	Input.parse_input_event(suelta)
+	await _cuadros(4)
+	_check(not a.esc_armado, "#68: mover el stick desarma el Esc")
+	_mover_mouse(Vector2(-50, -50))
+	principal.ir_mapa()
+	await _cuadros(10)
 
 
 ## Nueva Partida +: se ofrece al terminar, explica, deja elegir y parte de cero con todo lo tuyo.

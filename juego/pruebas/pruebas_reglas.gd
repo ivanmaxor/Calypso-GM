@@ -17,6 +17,7 @@ func _tests() -> void:
 	_tests_hangar_delante()
 	_tests_hitbox_indicador()
 	_tests_consejo_derrota()
+	_tests_barra_mascota()
 	_tests_pruebas_aisladas()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
@@ -62,6 +63,36 @@ func _tests_consejo_derrota() -> void:
 	r.free()
 	if not tenia:
 		Partida.d.desbloqueos.erase("hangar")
+
+
+## #67: una mascota lista y sin a quién atacar mantiene la barra llena; cuando aparece algo, actúa y la vacía.
+func _tests_barra_mascota() -> void:
+	var antes: String = Partida.d.mascota
+	Partida.dar_mascota("mordisco")
+	Partida.d.mascota = "mordisco"
+	var c = _combate_prueba("pistola", 1, false)
+	_ok(c.tiene_mascota and c.pet_ia == "come", "#67: el combate de prueba trae a Mordisco")
+	var recarga: float = Partida.pet_recarga()
+	var lleno_desde := -1
+	var minimo_despues := 1.0
+	for i in int(recarga) + 120:
+		c._tick_mascota()
+		var listo: float = 1.0 - clampf(c.pet_cd / recarga, 0.0, 1.0)
+		if lleno_desde < 0 and listo >= 1.0:
+			lleno_desde = i
+		elif lleno_desde >= 0:
+			minimo_despues = minf(minimo_despues, listo)
+	_ok(lleno_desde >= 0, "#67: sin balas cerca, la barra de Mordisco se llena")
+	_ok(minimo_despues >= 1.0, "#67: y se queda llena mientras no hay balas (mínimo %.3f)" % minimo_despues)
+	# aparece una bala al lado: se la come en cuanto vuelve a buscar, y la barra parte de cero
+	var nams: int = c.nams
+	_bala_prueba(c, c.px + 4.0, c.py)
+	for i in 30:
+		c._tick_mascota()
+	_ok(c.nams == nams + 1 and c.bn == 0, "#67: con una bala cerca, Mordisco se la come")
+	_ok(c.pet_cd > recarga - 31.0, "#67: después de comer, la barra vuelve a cargarse desde cero")
+	c.queue_free()
+	Partida.d.mascota = antes
 
 
 ## M02: lo del fondo que va delante de una estación es un recorte exacto del fondo, en su lugar, y tapa a alguna estación.
