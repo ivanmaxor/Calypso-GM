@@ -423,11 +423,18 @@ func _flujo() -> void:
 			var d := _hijo_de_tipo(a, "res://pantallas/dialogo.gd")
 			_check(d != null and d.lineas == Datos.DIALOGOS["derrota"], "Don Tuerca consuela la primera derrota antes de que elijas (#65)")
 			_pulsar("ui_cancel")
-			espera_f = 20
+			espera_f = 2
 		61:
 			_check(_hijo_de_tipo(a, "res://pantallas/dialogo.gd") == null, "#65: Esc cierra el consejo y sigue en el resultado")
 			_check(_foco() == a.b3, "#65: después del consejo, el foco queda en HANGAR")
 			_check(a.b2.visible, "#65: REINTENTAR sigue a mano")
+			# un clic apurado justo después de cerrar el consejo no aprieta REINTENTAR
+			f_en_curso = true
+			get_tree().root.notification(Node.NOTIFICATION_VP_MOUSE_ENTER)
+			await _clic(a.b2)
+			_check(principal.actual == a, "#65: un clic apurado tras el consejo no reintenta")
+			_mover_mouse(Vector2(-50, -50))
+			f_en_curso = false
 			a.b1.grab_focus()
 			_pulsar("ui_accept")
 			espera_f = 20
