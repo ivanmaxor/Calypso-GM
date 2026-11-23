@@ -42,6 +42,7 @@ func _init() -> void:
 		"niveles": CatalogoNiveles.niveles(),
 		"rarezas": CatalogoProgreso.rarezas(),
 		"dificultades": CatalogoProgreso.dificultades(),
+		"mejora_por_nivel": CatalogoProgreso.MEJORA_POR_NIVEL,
 		"naves": CatalogoProgreso.naves(),
 		"mascotas": CatalogoProgreso.mascotas(),
 		"items": CatalogoProgreso.items(),

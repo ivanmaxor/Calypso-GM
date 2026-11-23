@@ -65,7 +65,7 @@ Todo el contenido y casi todo el balance viven en clases estáticas (`class_name
 | Archivo | Qué trae |
 |---|---|
 | `catalogo_armas.gd` | `armas()`: 26 armas (tipo, base, 4 mejoras, sinergia y evolución). `habilidades()`: 30 habilidades |
-| `catalogo_progreso.gd` | Rarezas, dificultades, naves, pinturas, mascotas, piezas, base por mundo y desafíos |
+| `catalogo_progreso.gd` | Rarezas, dificultades, cuánto sube cada mejora de pieza según la dificultad (`MEJORA_POR_NIVEL`), naves, pinturas, mascotas, piezas, base por mundo y desafíos |
 | `catalogo_niveles.gd` | Enemigos, rutas, mundos y niveles (incluye `1-R` y `1-INF`), con pistas, ritmo, mezcla e hitos |
 | `catalogo_dialogos.gd` | Diálogos de Don Tuerca y Calypso, y frases de Calypso en combate |
 
@@ -109,6 +109,7 @@ El diccionario `res` que emite `terminado` trae:
 - Ruleta: `giros` y `jackpots`.
 
 Luego se llaman `Partida.registrar(res)`, `completar_nivel` (si ganó), `generar_botin(res)` y `revisar_desafios()`.
+La meta de cadena de la 3.ª estrella sale siempre de `Partida.meta_cadena(id)`: la del catálogo por el multiplicador `cadena` de la dificultad (#62). La usan `completar_nivel`, el HUD, la pausa, el resultado y el panel del nivel.
 
 ## Partidas
 

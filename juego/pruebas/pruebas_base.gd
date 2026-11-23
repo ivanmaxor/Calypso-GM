@@ -149,8 +149,14 @@ func _preparar_combate(c) -> void:
 				Partida._sumar(c.stats, h.mods)
 			if h.get("especial", "") == "escudo":
 				c.escudo = true
+	# --cartas[=N]: N subidas en cola (1 si no dice). --elegidas=K: abre las cartas y elige K, para ver
+	# la tanda K+1 con su "¡OTRA SUBIDA!" (#64)
 	if args.has("cartas"):
-		c.niveles_pendientes = 1
+		c.niveles_pendientes = maxi(1, int(args.cartas))
+		if args.has("elegidas"):
+			c._abrir_cartas()
+			for k in int(args.elegidas):
+				c.elegir_carta(0)
 	if args.has("barra"):
 		c.barra = float(args.barra)
 	if args.has("ruleta"):
