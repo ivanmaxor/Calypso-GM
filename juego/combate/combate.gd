@@ -3363,11 +3363,12 @@ func dibujar_hud(c: CanvasItem) -> void:
 				c.draw_rect(Rect2(d + 5 + 92.0 * f, 13, 2, 12), UI.C_CIAN)
 		# estrellas por conseguir
 		var ok_golpes: bool = golpes <= nivel.golpes
-		var ok_cadena: bool = max_cadena >= nivel.cadena
+		var meta_cadena: int = Partida.meta_cadena(nivel_id)
+		var ok_cadena: bool = max_cadena >= meta_cadena
 		c.draw_texture(Datos.tex("ui_estrella" if ok_golpes else "ui_estrella_vacia"), Vector2(d + 4, 28))
 		UI.t(c, d + 20, 27, "Golpes %d/%d" % [golpes, nivel.golpes], UI.C_TEXTO if ok_golpes else UI.C_ROJO)
 		c.draw_texture(Datos.tex("ui_estrella" if ok_cadena else "ui_estrella_vacia"), Vector2(d + 4, 44))
-		UI.t(c, d + 20, 43, "Cadena %d/%d" % [mini(max_cadena, nivel.cadena), nivel.cadena], UI.C_TEXTO if ok_cadena else UI.C_GRIS)
+		UI.t(c, d + 20, 43, "Cadena %d/%d" % [mini(max_cadena, meta_cadena), meta_cadena], UI.C_TEXTO if ok_cadena else UI.C_GRIS)
 	if ciclo > 0:
 		UI.t(c, d + 76, 0, "NG+%d" % ciclo, UI.C_ROJO)
 	# cadena

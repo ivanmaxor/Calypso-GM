@@ -24,20 +24,21 @@ const PROB_CICLO := {4: 0.0015, 5: 0.0003}
 ## hasta 1 en el primer minuto), salva multiplica el tiempo entre salvas de los Bots y jefe_cd, el tiempo entre
 ## ataques de los jefes (menos es más seguido).
 ## Difícil se nota en cuántos enemigos y balas hay, no en morir de tres golpes: por eso su vida y su daño suben poco.
+## cadena multiplica la meta de cadena de la 3.ª estrella (#62): con más enemigos la cadena crece sola.
 static func dificultades() -> Dictionary:
 	return {
 		"facil": {"nombre": "Fácil", "desc": "Para conocer el juego con calma. Te perdona más.", "icono": "dif_facil", "color": Color("7ee07a"),
 			"hp": 0.8, "dano": 0.7, "vel": 0.9, "disparo": 1.25, "botin": 0.85, "chatarra": 1.0,
-			"ritmo": 1.0, "inicio": 1.0, "ganas": 0.35, "salva": 1.0, "jefe_cd": 1.0},
+			"ritmo": 1.0, "inicio": 1.0, "ganas": 0.35, "salva": 1.0, "jefe_cd": 1.0, "cadena": 1.0},
 		"normal": {"nombre": "Normal", "desc": "Como está pensado. Hay que esquivar y armarse bien.", "icono": "dif_normal", "color": Color("f5c84c"),
 			"hp": 1.0, "dano": 1.0, "vel": 1.0, "disparo": 1.0, "botin": 1.0, "chatarra": 1.0,
-			"ritmo": 1.0, "inicio": 1.0, "ganas": 0.35, "salva": 1.0, "jefe_cd": 1.0},
+			"ritmo": 1.0, "inicio": 1.0, "ganas": 0.35, "salva": 1.0, "jefe_cd": 1.0, "cadena": 1.0},
 		"dificil": {"nombre": "Difícil", "desc": "Muchos más enemigos y balas desde el inicio. Mejor botín.", "icono": "dif_dificil", "color": Color("ff8a4a"),
 			"hp": 1.15, "dano": 1.2, "vel": 1.1, "disparo": 0.9, "botin": 1.2, "chatarra": 1.2,
-			"ritmo": 1.4, "inicio": 1.3, "ganas": 0.7, "salva": 0.75, "jefe_cd": 0.85},
+			"ritmo": 1.4, "inicio": 1.3, "ganas": 0.7, "salva": 0.75, "jefe_cd": 0.85, "cadena": 1.5},
 		"extremo": {"nombre": "Extremo", "desc": "Se abre al terminar el juego. Sin pizzas. Mucho mejor botín.", "icono": "dif_extremo", "color": Color("ff4a5a"),
 			"hp": 1.45, "dano": 1.5, "vel": 1.2, "disparo": 0.8, "botin": 1.5, "chatarra": 1.5, "sin_pizza": true, "requiere": "terminar",
-			"ritmo": 1.6, "inicio": 1.4, "ganas": 0.85, "salva": 0.65, "jefe_cd": 0.75},
+			"ritmo": 1.6, "inicio": 1.4, "ganas": 0.85, "salva": 0.65, "jefe_cd": 0.75, "cadena": 1.5},
 	}
 
 

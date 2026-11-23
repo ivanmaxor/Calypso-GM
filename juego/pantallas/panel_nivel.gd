@@ -166,7 +166,7 @@ func _estrellas(x: float, y0: float) -> void:
 	UI.t(self, x, yy, "ESTRELLAS", UI.C_ORO)
 	yy += 16
 	var est: int = Partida.estrellas(id)
-	var cond := ["Termina el nivel", "Recibe %d golpes o menos" % def.golpes, "Haz una cadena de %d kills" % def.cadena]
+	var cond := ["Termina el nivel", "Recibe %d golpes o menos" % def.golpes, "Haz una cadena de %d kills" % Partida.meta_cadena(id)]
 	for k in 3:
 		draw_texture(Datos.tex("ui_estrella" if k < est else "ui_estrella_vacia"), Vector2(x, yy + 2))
 		UI.t(self, x + 18, yy, cond[k], UI.C_TEXTO if k < est else UI.C_GRIS)

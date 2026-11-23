@@ -499,6 +499,13 @@ func _aplicar_premio(p: Dictionary, nivel: String) -> Dictionary:
 	return p
 
 
+## La meta de cadena de la 3.ª estrella de un nivel, ajustada a la dificultad (#62), en múltiplos de 5.
+## La usan todos los que la muestran o la revisan: HUD, pausa, resultado y panel del nivel.
+func meta_cadena(id: String) -> int:
+	var base := float(Datos.NIVELES[id].get("cadena", 0))
+	return int(roundf(base * float(dif().get("cadena", 1.0)) / 5.0)) * 5
+
+
 ## Aplica el resultado de un nivel ganado. Devuelve lo que hay que celebrar.
 func completar_nivel(id: String, res: Dictionary) -> Dictionary:
 	var def: Dictionary = Datos.NIVELES[id]
@@ -506,7 +513,7 @@ func completar_nivel(id: String, res: Dictionary) -> Dictionary:
 	var est := 1
 	if res.golpes <= def.golpes:
 		est += 1
-	if res.max_cadena >= def.cadena:
+	if res.max_cadena >= meta_cadena(id):
 		est += 1
 	var antes := estrellas(id)
 	d.niveles[id] = {"completado": true, "estrellas": maxi(est, antes)}

@@ -6,7 +6,7 @@ func _campana(c) -> void:
 	var res: Dictionary = c.res
 	var id: String = res.nivel_id
 	intentos[id] = intentos.get(id, 0) + 1
-	print("[campana] %s #%d %s t=%ds kills=%d niv=%d golpes=%d/%d hp=%d/%d cadena=%d/%d desync=%d ace=%d est=%d chat=%d  %s" % [id, intentos[id], "GANA" if res.ganado else "pierde", res.tiempo, res.kills, res.nivel, res.golpes, Datos.NIVELES[id].golpes, res.hp, res.hp_max, res.max_cadena, Datos.NIVELES[id].cadena, res.desyncs, res.aces, Partida.estrellas(id), res.chatarra, res.build])
+	print("[campana] %s #%d %s t=%ds kills=%d niv=%d golpes=%d/%d hp=%d/%d cadena=%d/%d desync=%d ace=%d est=%d chat=%d  %s" % [id, intentos[id], "GANA" if res.ganado else "pierde", res.tiempo, res.kills, res.nivel, res.golpes, Datos.NIVELES[id].golpes, res.hp, res.hp_max, res.max_cadena, Partida.meta_cadena(id), res.desyncs, res.aces, Partida.estrellas(id), res.chatarra, res.build])
 	print("           ttk: ", _ttk_txt(res), _jefes_txt(res), "  golpes por: ", str(res.get("golpes_por", {})))
 	_usar_hangar()
 	if args.has("barrido"):

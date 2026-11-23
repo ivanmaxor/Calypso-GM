@@ -19,11 +19,57 @@ func _tests() -> void:
 	_tests_consejo_derrota()
 	_tests_barra_mascota()
 	_tests_pruebas_aisladas()
+	_tests_meta_cadena_dificultad()
 	_tests_mejora_por_dificultad()
 	_tests_desafios_antes_del_arsenal()
 	_tests_otra_subida()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
+
+
+## #62: la meta de cadena de la 3.ª estrella depende de la dificultad. En Difícil hay más enemigos y la cadena
+## crece sola, así que la meta sube; en Normal queda la del catálogo. La estrella se gana con la meta ajustada.
+func _tests_meta_cadena_dificultad() -> void:
+	Partida.nuevo("normal")
+	for id in Datos.ORDEN_NIVELES:
+		_ok(Partida.meta_cadena(id) == int(Datos.NIVELES[id].cadena), "en Normal la meta de cadena de %s es la del catálogo" % id)
+	var normal := {}
+	for id in Datos.ORDEN_NIVELES:
+		normal[id] = Partida.meta_cadena(id)
+	var orden := ["facil", "normal", "dificil", "extremo"]
+	for i in orden.size():
+		_ok(Datos.DIFICULTADES[orden[i]].has("cadena"), "la dificultad %s define su meta de cadena" % orden[i])
+		if i > 0:
+			_ok(float(Datos.DIFICULTADES[orden[i]].cadena) >= float(Datos.DIFICULTADES[orden[i - 1]].cadena), "la meta de cadena de %s pide al menos lo de %s" % [orden[i], orden[i - 1]])
+	Partida.nuevo("dificil")
+	for id in Datos.ORDEN_NIVELES:
+		var m: int = Partida.meta_cadena(id)
+		_ok(m > normal[id] and m % 5 == 0, "en Difícil la meta de cadena de %s sube y es redonda: %d (Normal %d)" % [id, m, normal[id]])
+	_ok(Partida.meta_cadena("1-8") == 195 and Partida.meta_cadena("1-1") == 45, "en Difícil, 1-8 pide 195 y 1-1 pide 45")
+	# la estrella: con la meta de Normal no alcanza en Difícil; con la ajustada, sí
+	var r1 := Partida.completar_nivel("1-1", {"golpes": 0, "max_cadena": normal["1-1"]})
+	_ok(r1.estrellas == 2, "en Difícil la cadena de Normal ya no da la 3.ª estrella")
+	var r2 := Partida.completar_nivel("1-1", {"golpes": 0, "max_cadena": Partida.meta_cadena("1-1")})
+	_ok(r2.estrellas == 3, "en Difícil la cadena ajustada da la 3.ª estrella")
+	# la pausa muestra y revisa la meta ajustada
+	Partida.nivel_sel = "1-5"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	var p = load("res://pantallas/pausa.gd").new()
+	p.combate = c
+	var meta: int = Partida.meta_cadena("1-5")
+	c.max_cadena = normal["1-5"]
+	var est: Array = p.estrellas()
+	_ok(("Cadena de %d " % meta) in str(est[3].txt) and not est[3].ok, "la pausa muestra la meta de Difícil y no la da por lograda con la de Normal")
+	c.max_cadena = meta
+	_ok(p.estrellas()[3].ok, "la pausa la da por lograda con la meta ajustada")
+	p.free()
+	c.queue_free()
+	Partida.nuevo("normal")
+	var r3 := Partida.completar_nivel("1-1", {"golpes": 0, "max_cadena": normal["1-1"]})
+	_ok(r3.estrellas == 3, "en Normal la meta del catálogo da la 3.ª estrella")
+	Partida.nuevo()
 
 
 ## #47: cada prueba tiene sus propias opciones y teclas, y --reiniciar las deja de fábrica.
