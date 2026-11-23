@@ -19,6 +19,7 @@ func _tests() -> void:
 	_tests_consejo_derrota()
 	_tests_barra_mascota()
 	_tests_pruebas_aisladas()
+	_tests_mejora_por_dificultad()
 	_tests_desafios_antes_del_arsenal()
 	_tests_otra_subida()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
@@ -764,7 +765,10 @@ func _tests_mejoras_visibles() -> void:
 			_ok(HE.texto_mejora(it) == "", "al máximo no ofrece mejora: " + id)
 	var turbo := {"id": "motor_turbo", "rareza": 0, "nivel": 1, "uid": -1}
 	_ok(HE.texto_mejora(turbo).begins_with("Al mejorar: -"), "la recarga de esquiva baja al mejorar: " + HE.texto_mejora(turbo))
-	# M13 (balance): con la mejora por nivel actual, cada nivel de cada pieza cambia un número de la ficha
+	# M13 (balance): con la mejora por nivel actual, cada nivel de cada pieza cambia un número de la ficha.
+	# Se mide en Difícil, donde la mejora es la más chica (8 %, #61).
+	var dif_antes: String = Partida.d.dificultad
+	Partida.d.dificultad = "dificil"
 	for id in Datos.ITEMS:
 		for rareza in [0, 3]:
 			var it2 := {"id": id, "rareza": rareza, "nivel": 1, "uid": -1}
@@ -775,6 +779,7 @@ func _tests_mejoras_visibles() -> void:
 				if antes == _textos_stats(Partida.stats_item(it2)):
 					sin_cambio += 1
 			_ok(sin_cambio == 0, "cada mejora de %s (rareza %d) cambia un número visible (%d sin cambio)" % [id, rareza, sin_cambio])
+	Partida.d.dificultad = dif_antes
 	_ok(PiezaBoton.valor_stat("atk", 2.16) == "+2,2", "un decimal con coma: " + PiezaBoton.valor_stat("atk", 2.16))
 	_ok(PiezaBoton.valor_stat("atk", 3.0) == "+3", "sin ,0 que no aporta")
 	_ok(PiezaBoton.valor_stat("crit", 0.045) == "+4,5 %", "porcentaje con decimal: " + PiezaBoton.valor_stat("crit", 0.045))
@@ -785,6 +790,47 @@ func _textos_stats(st: Dictionary) -> String:
 	for k in st:
 		r += k + PiezaBoton.valor_stat(k, st[k]) + ";"
 	return r
+
+
+## #61: mejorar una pieza sube más en Fácil (12 %) que en Normal (10 %) y que en Difícil (8 %), y la ficha lo muestra.
+## Sale de la dificultad de la partida, así que también vale para las piezas que ya tenías.
+func _tests_mejora_por_dificultad() -> void:
+	var HE = load("res://pantallas/hangar_equipo.gd")
+	var dif_antes: String = Partida.d.dificultad
+	var pct := {"facil": 0.12, "normal": 0.10, "dificil": 0.08, "extremo": 0.08}
+	for di in pct:
+		Partida.d.dificultad = di
+		_ok(is_equal_approx(Partida.mejora_por_nivel(), pct[di]), "la mejora por nivel en %s es %d %%" % [di, roundi(pct[di] * 100)])
+	for id in Datos.ITEMS:
+		for rareza in [0, 3]:
+			var it := {"id": id, "rareza": rareza, "nivel": 5, "uid": -1}
+			var st := {}
+			for di in pct:
+				Partida.d.dificultad = di
+				st[di] = Partida.stats_item(it)
+			for k in Datos.ITEMS[id].base:
+				var base: float = Datos.ITEMS[id].base[k] * Datos.RAREZAS[rareza].mult
+				var exactos := true
+				for di in pct:
+					exactos = exactos and is_equal_approx(st[di][k], base * (1.0 + pct[di] * 4))
+				_ok(exactos, "%s (rareza %d) al nivel 5 suma el porcentaje de cada dificultad en %s" % [id, rareza, k])
+				_ok(absf(st.facil[k]) > absf(st.normal[k]) and absf(st.normal[k]) > absf(st.dificil[k]),
+					"%s (rareza %d) da más %s en Fácil que en Normal, y en Normal que en Difícil" % [id, rareza, k])
+	# "Al mejorar": la Munición Perforante épica tiene 5 de ataque de base, así que sube 0,6, 0,5 o 0,4
+	var nom: String = PiezaBoton.sin_spoiler(Datos.NOMBRE_STAT.atk)
+	var perf := {"id": "mun_perforante", "rareza": 3, "nivel": 1, "uid": -1}
+	var esperado := {"facil": "+0,6", "normal": "+0,5", "dificil": "+0,4"}
+	for di in esperado:
+		Partida.d.dificultad = di
+		var txt: String = HE.texto_mejora(perf)
+		_ok(txt == "Al mejorar: %s %s" % [esperado[di], nom], "Al mejorar en %s muestra %s: %s" % [di, esperado[di], txt])
+	# retroactivo: la misma pieza, ya mejorada, cambia si cambia la dificultad de la partida
+	var perf5 := {"id": "mun_perforante", "rareza": 0, "nivel": 6, "uid": -1}
+	Partida.d.dificultad = "facil"
+	var en_facil: float = Partida.stats_item(perf5).atk
+	Partida.d.dificultad = "dificil"
+	_ok(is_equal_approx(en_facil, 2.5 * 1.6) and is_equal_approx(Partida.stats_item(perf5).atk, 2.5 * 1.4), "la misma pieza al nivel 6 da 4 en Fácil y 3,5 en Difícil")
+	Partida.d.dificultad = dif_antes
 
 
 ## M16 y M17: la pausa muestra lo equipado y las estrellas, y todo cabe en su columna.
