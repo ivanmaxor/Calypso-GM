@@ -19,6 +19,7 @@ func _tests() -> void:
 	_tests_consejo_derrota()
 	_tests_barra_mascota()
 	_tests_pruebas_aisladas()
+	_tests_hitbox_estilos()
 	_tests_meta_cadena_dificultad()
 	_tests_mejora_por_dificultad()
 	_tests_desafios_antes_del_arsenal()
@@ -1137,6 +1138,86 @@ func _tests_hitbox_indicador() -> void:
 	c.stats.hitbox_mult = 0.0
 	_ok(c.centro_hitbox_discreta() <= c.hitbox() - 0.5, "con la hitbox mínima el aro se sigue viendo (%.2f / %.2f)" % [c.centro_hitbox_discreta(), c.hitbox()])
 	c.queue_free()
+
+
+## #58: los tres estilos de la hitbox jugando normal. Se prueban las funciones que deciden, no los píxeles.
+func _tests_hitbox_estilos() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.estado = "jugando"
+	c.foco = false
+	_ok(c.ESTILO_HITBOX in c.ESTILOS_HITBOX and c.estilo_hitbox == c.ESTILO_HITBOX, "#58: el estilo por defecto es uno de los tres")
+	_ok(c.ESTILO_HITBOX == "cercana", "#58: por defecto, el aro aparece solo con balas cerca (propuesta)")
+	c.jx = 200.0
+	c.jy = 300.0
+	c.bn = 0
+	# tenue: el aro siempre, al 35 %, con el centro
+	c.estilo_hitbox = "tenue"
+	c._tick_aro_hitbox()
+	_ok(is_equal_approx(c.alfa_aro_hitbox(), 0.35), "#58 tenue: el aro se ve siempre al 35 %% (%.2f)" % c.alfa_aro_hitbox())
+	_ok(c.centro_hitbox_visible(), "#58 tenue: se ve el centro blanco")
+	# cercana: sin balas cerca no hay aro; con una bala a menos de DIST_ARO_CERCA, sí
+	c.estilo_hitbox = "cercana"
+	c.aro_hitbox = 0.0
+	for k in 60:
+		c._tick_aro_hitbox()
+	_ok(c.alfa_aro_hitbox() == 0.0, "#58 cercana: sin balas no hay aro")
+	_ok(c.centro_hitbox_visible(), "#58 cercana: el centro blanco se ve siempre")
+	c._bala(c.jx + c.DIST_ARO_CERCA + 10.0, c.jy, 0.0, 0.0, 0, 0, 0, true)
+	for k in 60:
+		c._tick_aro_hitbox()
+	_ok(not c.bala_cerca_de_hitbox() and c.alfa_aro_hitbox() == 0.0, "#58 cercana: una bala lejos no enciende el aro")
+	c._bala(c.jx + 20.0, c.jy - 15.0, 0.0, 0.0, 0, 0, 0, true)
+	_ok(c.bala_cerca_de_hitbox(), "#58 cercana: una bala a 25 px cuenta como cerca")
+	c._tick_aro_hitbox()
+	var tras_uno: float = c.alfa_aro_hitbox()
+	_ok(tras_uno > 0.0 and tras_uno < c.ALFA_ARO_CERCA, "#58 cercana: el aro aparece de a poco, no de golpe (%.2f)" % tras_uno)
+	for k in 10:
+		c._tick_aro_hitbox()
+	_ok(is_equal_approx(c.alfa_aro_hitbox(), c.ALFA_ARO_CERCA), "#58 cercana: con la bala cerca el aro llega al 70 %")
+	c.quitar_bala(1)
+	c._tick_aro_hitbox()
+	_ok(c.alfa_aro_hitbox() > 0.5, "#58 cercana: al alejarse la bala el aro no se apaga de golpe")
+	for k in 30:
+		c._tick_aro_hitbox()
+	_ok(c.alfa_aro_hitbox() == 0.0, "#58 cercana: y en menos de un segundo se apaga")
+	# foco: jugando normal no se ve nada; en foco o Desync se ve entero
+	c.estilo_hitbox = "foco"
+	c._bala(c.jx + 5.0, c.jy, 0.0, 0.0, 0, 0, 0, true)
+	c._tick_aro_hitbox()
+	_ok(c.alfa_aro_hitbox() == 0.0 and not c.centro_hitbox_visible(), "#58 foco: jugando normal no se ve ni el aro ni el centro, aunque haya balas")
+	c.foco = true
+	_ok(c.hitbox_destacada(), "#58 foco: con el foco se ve entera")
+	c.foco = false
+	c.estado = "desync"
+	_ok(c.hitbox_destacada(), "#58 foco: en Desync se ve entera")
+	c.estado = "jugando"
+	_ok(is_equal_approx(c.hitbox(), 3.5), "#58: ningún estilo cambia la hitbox real")
+	# la pista del 1-1 que explica el punto sale solo con el estilo "foco", y en orden
+	var con_foco: Array = c.pistas_nivel()
+	_ok(con_foco.has(c.PISTA_HITBOX_FOCO) and con_foco.size() == c.nivel.pistas.size() + 1, "#58 foco: el 1-1 suma la pista del punto")
+	var en_orden := true
+	for i in range(1, con_foco.size()):
+		en_orden = en_orden and con_foco[i - 1][0] <= con_foco[i][0]
+	_ok(en_orden, "#58 foco: las pistas del 1-1 siguen en orden de tiempo")
+	_ok(not c.nivel.pistas.has(c.PISTA_HITBOX_FOCO), "#58 foco: la pista no se pega al catálogo")
+	_ok(Datos.con_teclas(c.PISTA_HITBOX_FOCO[1]).find("{") < 0, "#58 foco: la pista lleva la tecla real")
+	for est in ["tenue", "cercana"]:
+		c.estilo_hitbox = est
+		_ok(c.pistas_nivel() == c.nivel.pistas, "#58 %s: el 1-1 queda con sus pistas de siempre" % est)
+	c.queue_free()
+	Partida.nuevo()
+	Partida.nivel_sel = "1-2"
+	var c2 = load("res://combate/combate.gd").new()
+	add_child(c2)
+	c2.set_physics_process(false)
+	c2.estilo_hitbox = "foco"
+	_ok(c2.pistas_nivel() == c2.nivel.pistas, "#58 foco: la pista del punto es solo del 1-1")
+	c2.queue_free()
+	Partida.nuevo()
 
 
 ## #66: al perder en el 1-3 se cumplen desafíos (snipers, roces, chatarra...) que dan armas y habilidades,
