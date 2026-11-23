@@ -124,8 +124,9 @@ func _draw() -> void:
 
 
 func _bloque_estrellas(def: Dictionary) -> void:
-	var ok := [res.ganado, res.ganado and res.golpes <= def.golpes, res.ganado and res.max_cadena >= def.cadena]
-	var txt := ["Terminaste el nivel", "Golpes: %d (máx. %d)" % [res.golpes, def.golpes], "Cadena: %d (mín. %d)" % [res.max_cadena, def.cadena]]
+	var meta_cadena := Partida.meta_cadena(res.nivel_id)
+	var ok := [res.ganado, res.ganado and res.golpes <= def.golpes, res.ganado and res.max_cadena >= meta_cadena]
+	var txt := ["Terminaste el nivel", "Golpes: %d (máx. %d)" % [res.golpes, def.golpes], "Cadena: %d (mín. %d)" % [res.max_cadena, meta_cadena]]
 	var orden := []
 	for k in 3:
 		if ok[k]:

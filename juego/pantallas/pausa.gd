@@ -126,11 +126,12 @@ func estrellas() -> Array:
 	var nv: Dictionary = combate.nivel
 	if combate.modo_nivel != "normal" or not nv.has("golpes"):
 		return []
+	var meta_cadena := Partida.meta_cadena(combate.nivel_id)
 	return [
 		{"txt": "ESTRELLAS DEL NIVEL " + str(combate.nivel_id)},
 		{"txt": "Termina el nivel", "ok": false},
 		{"txt": "Máximo %d golpes (llevas %d)" % [nv.golpes, combate.golpes], "ok": combate.golpes <= nv.golpes},
-		{"txt": "Cadena de %d (mejor: %d)" % [nv.cadena, combate.max_cadena], "ok": combate.max_cadena >= nv.cadena},
+		{"txt": "Cadena de %d (mejor: %d)" % [meta_cadena, combate.max_cadena], "ok": combate.max_cadena >= meta_cadena},
 	]
 
 

@@ -109,6 +109,7 @@ El diccionario `res` que emite `terminado` trae:
 - Ruleta: `giros` y `jackpots`.
 
 Luego se llaman `Partida.registrar(res)`, `completar_nivel` (si ganó), `generar_botin(res)` y `revisar_desafios()`.
+La meta de cadena de la 3.ª estrella sale siempre de `Partida.meta_cadena(id)`: la del catálogo por el multiplicador `cadena` de la dificultad (#62). La usan `completar_nivel`, el HUD, la pausa, el resultado y el panel del nivel.
 
 ## Partidas
 
