@@ -153,7 +153,8 @@ func _despues(res: Dictionary, avance: Dictionary, nuevas: Array, destino: Calla
 	premios.append_array(nuevas)
 	avance.premio = {}
 	nuevas.clear()
-	var clave: String = "despues_" + res.nivel_id if res.ganado else "derrota"
+	# lo de la derrota ya lo dijo Don Tuerca en el resultado, antes de elegir (#65)
+	var clave: String = "despues_" + res.nivel_id if res.ganado else ""
 	# retirarse no es perder, y en el Modo Infinito siempre se termina cayendo
 	if res.get("abandono", false) or res.get("modo", Datos.NIVELES[res.nivel_id].get("modo", "normal")) == "infinito":
 		clave = ""

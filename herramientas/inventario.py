@@ -109,7 +109,10 @@ w()
 
 w("## Piezas")
 w()
-w("Cada pieza da su base por rareza (× multiplicador) y suma un 8 % de esa base por nivel de mejora. Las pasivas se abren")
+mej = d["mejora_por_nivel"]
+mej_txt = ", ".join("%s %s %%" % (d["dificultades"][k]["nombre"], num(v * 100)) for k, v in mej.items())
+w("Cada pieza da su base por rareza (× multiplicador) y suma un porcentaje de esa base por nivel de mejora, según la")
+w("dificultad de la partida: %s. Las pasivas se abren" % mej_txt)
 w("según la rareza (`r`: 2 Poco común, 3 Raro, 4 Épico, 5 Legendario).")
 w()
 w("| id | Ranura | Nombre | Qué hace | Base | Pasivas | Mundo | Empieza a caer |")

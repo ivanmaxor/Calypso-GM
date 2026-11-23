@@ -42,6 +42,13 @@ static func dificultades() -> Dictionary:
 	}
 
 
+## Cuánto sube cada nivel de mejora de una pieza, sobre su base, según la dificultad (#61). Con 4 % la Mira subía
+## 0,08 de ataque por nivel y no se notaba (M13). Con 8 % en todas, fuera de Difícil se notaba poco: en Difícil
+## está bien que cueste, porque esa es la idea del modo. Depende de la dificultad de la partida, así que vale
+## para las piezas que ya tienes (es retroactivo).
+const MEJORA_POR_NIVEL := {"facil": 0.12, "normal": 0.10, "dificil": 0.08, "extremo": 0.08}
+
+
 # ===============================================================================================
 # NAVES: cada una trae su arma principal. Casi todas se ganan con desafíos, no por pasar niveles.
 # ===============================================================================================
