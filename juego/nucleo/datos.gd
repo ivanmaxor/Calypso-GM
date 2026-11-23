@@ -39,11 +39,14 @@ const NOMBRE_STAT := {
 
 # --- los mapas: dónde está cada nivel --------------------------------------------------------
 const NODOS := {"1-1": Vector2(70, 282), "1-2": Vector2(178, 226), "1-3": Vector2(288, 280), "1-4": Vector2(398, 204), "1-5": Vector2(516, 266), "1-6": Vector2(628, 210), "1-7": Vector2(740, 274), "1-8": Vector2(872, 208),
-	"1-R": Vector2(420, 314), "1-INF": Vector2(952, 120)}
+	"1-R": Vector2(440, 300), "1-INF": Vector2(952, 120)}
 const PORTAL := Vector2(984, 240)
 const ORDEN_NIVELES := ["1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7", "1-8"]
 ## Niveles fuera del camino principal: se abren al terminar "requiere".
 const EXTRAS := {"1-R": {"requiere": "1-4"}, "1-INF": {"requiere": "1-8"}}
+## Extras que van por un desvío: un ramal de tierra que sale del nivel que los abre (lo dibuja
+## generar_mapa.py y el mapa lo puntea). Los demás se unen al camino con puntos desde la mitad del tramo.
+const RAMALES := ["1-R"]
 ## El último nivel que existe hoy. Terminarlo cuenta como "terminar el juego": abre Extremo y Nueva Partida +.
 const ULTIMO_NIVEL := "1-8"
 
