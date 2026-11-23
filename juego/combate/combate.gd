@@ -340,6 +340,7 @@ var py := 320.0
 var pet_id := ""
 var pet_ia := ""
 var pet_cd := 200.0
+var pet_busca := 0  # lista pero sin a quién: cuadros para volver a buscar, con la barra llena (#67)
 var pet_boca := 0
 var pet_forma := 0
 var pet_nivel := 1
@@ -800,9 +801,14 @@ func _tick_mascota() -> void:
 		oy = pet_oy
 	px = lerpf(px, ox, 0.09)
 	py = lerpf(py, oy, 0.09)
-	pet_cd -= 1.0
 	if pet_cd > 0:
-		return
+		pet_cd -= 1.0
+		if pet_cd > 0:
+			return
+	if pet_busca > 0:
+		pet_busca -= 1
+		if pet_busca > 0:
+			return
 	match pet_ia:
 		"come":
 			_mascota_come()
@@ -816,6 +822,13 @@ func _tick_mascota() -> void:
 			pet_cd = 60.0
 
 
+## La mascota está lista pero no tiene a quién: vuelve a buscar en unos cuadros sin vaciar la barra.
+## Antes se usaba pet_cd para esperar, y la barra (1 - pet_cd / recarga) temblaba entre ~95 % y lleno (#67).
+func _mascota_buscar(cuadros: int) -> void:
+	pet_cd = 0.0
+	pet_busca = cuadros
+
+
 func _mascota_come() -> void:
 	var radio := Partida.pet_radio()
 	var mejor := -1
@@ -826,7 +839,7 @@ func _mascota_come() -> void:
 			md = d
 			mejor = i
 	if mejor < 0:
-		pet_cd = 12.0
+		_mascota_buscar(12)
 		return
 	chispa(bx[mejor], by[mejor], Color("dccfe6"), 6)
 	pet_ox = lerpf(px, bx[mejor], 0.7)
@@ -844,7 +857,7 @@ func _mascota_chispa() -> void:
 	var ob := enemigo_cercano(px, py)
 	var radio := Partida.pet_radio()
 	if ob == null or dist2(ob.x, ob.y, px, py) > radio * radio:
-		pet_cd = 12.0
+		_mascota_buscar(12)
 		return
 	rayos.append({"a": Vector2(px, py), "b": Vector2(ob.x, ob.y), "t": 8})
 	golpear(ob, Partida.pet_dano() * stats.atk * stats.dano, false, ob.x, ob.y)
@@ -863,7 +876,7 @@ func _mascota_iman() -> void:
 			g.imantada = true
 			hubo = true
 	if not hubo:
-		pet_cd = 30.0
+		_mascota_buscar(30)
 		return
 	pet_ox = px
 	pet_oy = py
@@ -875,7 +888,7 @@ func _mascota_iman() -> void:
 
 func _mascota_escudo() -> void:
 	if escudo:
-		pet_cd = 30.0
+		_mascota_buscar(30)
 		return
 	escudo = true
 	pet_ox = px
