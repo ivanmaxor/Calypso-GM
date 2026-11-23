@@ -21,6 +21,10 @@ var estrellas_vistas := 0
 var modo := "normal"
 var abandono := false
 var desafio_cerca := ""
+## Segundos en que los botones no aceptan clics tras cerrar el consejo: si no, el clic que cierra el diálogo
+## (o un doble clic) caía sobre REINTENTAR, que queda justo debajo del cuadro de Don Tuerca (#65).
+const SIN_CLIC := 0.35
+var sin_clic_t := 0.0
 var b1: Button
 var b2: Button
 var b3: Button
@@ -60,6 +64,7 @@ var _t_acum := 0.0
 
 
 func _process(delta: float) -> void:
+	sin_clic_t = maxf(sin_clic_t - delta, 0.0)
 	_t_acum += delta * 60.0
 	t = int(_t_acum)
 	if res.ganado:
@@ -84,11 +89,33 @@ func _mostrar_botones() -> void:
 	b3.visible = Partida.tiene("hangar")
 	var lista: Array = [b2, b1, b3] if b3.visible else [b2, b1]
 	UI.lista_foco(lista, false, false)
-	b1.grab_focus()
+	# Al perder, Don Tuerca aconseja ir al Hangar: lo dice antes de que elijas y el foco queda ahí.
+	# Reintentar sigue a mano, pero es una elección (#65).
+	var foco: Button = b3 if perdio() and b3.visible else b1
+	if aconsejar_hangar():
+		load("res://pantallas/dialogo.gd").mostrar(self, "derrota", func():
+			foco.grab_focus()
+			sin_clic_t = SIN_CLIC)
+	else:
+		foco.grab_focus()
+
+
+## Retirarse no es perder, y el Modo Infinito siempre termina así.
+func perdio() -> bool:
+	return not res.ganado and not abandono and modo != "infinito"
+
+
+## "Anda al Hangar" solo tiene sentido si ya hay Hangar (se abre al ganar el 1-1). Si no, el consejo
+## espera a una derrota con Hangar: no se marca como visto (#65).
+func aconsejar_hangar() -> bool:
+	return perdio() and Partida.tiene("hangar")
 
 
 ## Enter o clic mientras se cuenta todo: ver el final de inmediato.
 func _input(ev: InputEvent) -> void:
+	if sin_clic_t > 0.0 and ev is InputEventMouseButton:
+		get_viewport().set_input_as_handled()
+		return
 	if b1.visible or ev is InputEventMouseMotion:
 		return
 	if ev.is_action_pressed("ui_accept") or (ev is InputEventMouseButton and ev.pressed):

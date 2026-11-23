@@ -420,12 +420,23 @@ func _flujo() -> void:
 			espera_f = 340
 		60:
 			_foto()
-			_pulsar("ui_accept")
-			espera_f = 20
-		61:
 			var d := _hijo_de_tipo(a, "res://pantallas/dialogo.gd")
-			_check(d != null and d.lineas == Datos.DIALOGOS["derrota"], "Don Tuerca consuela la primera derrota")
+			_check(d != null and d.lineas == Datos.DIALOGOS["derrota"], "Don Tuerca consuela la primera derrota antes de que elijas (#65)")
 			_pulsar("ui_cancel")
+			espera_f = 2
+		61:
+			_check(_hijo_de_tipo(a, "res://pantallas/dialogo.gd") == null, "#65: Esc cierra el consejo y sigue en el resultado")
+			_check(_foco() == a.b3, "#65: después del consejo, el foco queda en HANGAR")
+			_check(a.b2.visible, "#65: REINTENTAR sigue a mano")
+			# un clic apurado justo después de cerrar el consejo no aprieta REINTENTAR
+			f_en_curso = true
+			get_tree().root.notification(Node.NOTIFICATION_VP_MOUSE_ENTER)
+			await _clic(a.b2)
+			_check(principal.actual == a, "#65: un clic apurado tras el consejo no reintenta")
+			_mover_mouse(Vector2(-50, -50))
+			f_en_curso = false
+			a.b1.grab_focus()
+			_pulsar("ui_accept")
 			espera_f = 20
 		62:
 			_check(a.has_signal("jugar_nivel"), "vuelve al mapa")
@@ -1193,6 +1204,11 @@ func _flujo_resultados() -> void:
 		var r = principal.actual
 		_check(r.has_signal("al_mapa"), "resultado %s se abre" % tipo)
 		await _t(KEY_SPACE, 4)
+		if tipo == "derrota":
+			# al perder, el foco queda en HANGAR (#65). El consejo de Don Tuerca sale solo la primera vez:
+			# aquí ya está visto, y lo prueba el recorrido principal (paso 60)
+			_check(_foco() == (r.b3 if r.b3.visible else r.b1), "#65: resultado derrota: el foco queda en HANGAR")
+			r.b1.grab_focus()
 		_check(r.b1.visible and _foco() == r.b1, "resultado %s: Espacio salta la animacion" % tipo)
 		await _cuadros(6)
 		_foto("resultado_" + tipo)

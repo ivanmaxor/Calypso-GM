@@ -16,6 +16,7 @@ func _tests() -> void:
 	_tests_armas()
 	_tests_hangar_delante()
 	_tests_hitbox_indicador()
+	_tests_consejo_derrota()
 	_tests_barra_mascota()
 	_tests_pruebas_aisladas()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
@@ -42,6 +43,26 @@ func _tests_pruebas_aisladas() -> void:
 	_ok(Controles.a.obtener("esquivar", "teclado", 1) == "key:L", "#47: --reiniciar deja las teclas de fábrica")
 	Ajustes.musica = musica
 	Ajustes.disparo_auto = auto
+
+
+## #65: el consejo "anda al Hangar" solo sale al perder de verdad y si ya hay Hangar.
+func _tests_consejo_derrota() -> void:
+	var tenia: bool = Partida.tiene("hangar")
+	var r = load("res://pantallas/resultado.gd").new()
+	r.res = {"ganado": false}
+	r.modo = "normal"
+	Partida.d.desbloqueos.erase("hangar")
+	_ok(r.perdio() and not r.aconsejar_hangar(), "#65: sin Hangar (antes de ganar el 1-1) no se aconseja ir al Hangar")
+	Partida.desbloquear("hangar")
+	_ok(r.aconsejar_hangar(), "#65: con Hangar, al perder se aconseja ir al Hangar")
+	r.abandono = true
+	_ok(not r.aconsejar_hangar(), "#65: retirarse no es perder: sin consejo")
+	r.abandono = false
+	r.modo = "infinito"
+	_ok(not r.aconsejar_hangar(), "#65: en el Modo Infinito siempre se termina cayendo: sin consejo")
+	r.free()
+	if not tenia:
+		Partida.d.desbloqueos.erase("hangar")
 
 
 ## #67: una mascota lista y sin a quién atacar mantiene la barra llena; cuando aparece algo, actúa y la vacía.
