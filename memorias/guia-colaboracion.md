@@ -36,7 +36,8 @@ Para cualquiera que se sume a Calypso, con o sin una IA que le ayude.
 - **Pull Request a `main`**, con la plantilla llena:
   - qué pruebas corriste;
   - capturas, si cambia algo visible;
-  - qué quedó sin verificar.
+  - qué quedó sin verificar;
+  - **`Closes #N`** en el cuerpo, para enlazar el Issue. Tiene que ir **en inglés** (`Closes`, `Fixes` o `Resolves`): GitHub cierra el Issue por su cuenta solo con esas palabras. Con "Cierra #N" el Issue queda abierto aunque el PR se fusione.
   **El otro lo revisa y lo aprueba.** Después se fusiona.
 - **Antes de abrir el PR** corre, como mínimo, `probar.sh import`, `tests`, `flujo` y `flujo_hangar`. Si tocaste combate o balance, también bots.
 

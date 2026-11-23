@@ -105,8 +105,8 @@ Observaciones de una prueba real con jugadores. **Prioridad sugerida:** 🔴 alt
 
 | Versión | Objetivo |
 |---|---|
-| **Decisión** | Elegir la historia (A, B o C) en `docs/04_historia_y_mundos.md` |
-| v0.5 | Mundo 2 (Verdor): enemigos, jefe, música, regla propia, mascota Brote y sus 2 armas y 2 habilidades |
+| ✅ Decisión | Historia elegida: **A, Buen Chico** (2026-11-22) |
+| v0.5 | **Gancho narrativo (N01):** motivo y objetivo claros desde el inicio, y para qué te haces más fuerte. **Mundo 2 (Verdor):** enemigos, jefe, música, regla propia, mascota Brote y sus 2 armas y 2 habilidades. Hito "v0.5: Historia y Mundo 2" |
 | v0.6 | Mundo 3 (Jackpot) |
 | v0.7 a v0.9 | Mundos 4 a 6 |
 | v0.10 | El giro, el acto final y el jefe final |

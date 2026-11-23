@@ -22,6 +22,8 @@ const IFRAMES_ESCUDO_DESYNC := 45
 ## y, al subir de nivel, un respiro con la barra destellando antes de elegir (M14). Solo cambia el ritmo.
 const TRAS_DESYNC := 120
 const RESPIRO_NIVEL := 30
+## Cuadros que destella el título de las cartas cuando sale otra subida seguida (#64).
+const DESTELLO_SUBIDA := 24
 const TIERS_CADENA := [10, 25, 50, 100, 200]
 const MULT_CADENA := [1.0, 1.1, 1.2, 1.35, 1.5, 1.75]
 const CADENA_LARGA := 120.0  # con esta cadena la ventana ya está en su mínimo
@@ -291,6 +293,12 @@ var habs := {}
 var cartas := []
 var carta_sel := 0
 var carta_t := 0
+## Subidas seguidas (#64): cuál tanda de cartas se ve (1, 2...) y cuántas hay en total. Al elegir una carta
+## con otra subida en cola salen cartas nuevas al tiro, y sin aviso eso parecía un cambio de cartas.
+var subida_n := 0
+var subida_total := 0
+## Cuadros que le quedan al destello del título cuando sale otra tanda.
+var subida_flash := 0
 var cambios_restantes := 1
 var kills := 0
 var kills_tipo := {}
@@ -340,6 +348,7 @@ var py := 320.0
 var pet_id := ""
 var pet_ia := ""
 var pet_cd := 200.0
+var pet_busca := 0  # lista pero sin a quién: cuadros para volver a buscar, con la barra llena (#67)
 var pet_boca := 0
 var pet_forma := 0
 var pet_nivel := 1
@@ -800,9 +809,14 @@ func _tick_mascota() -> void:
 		oy = pet_oy
 	px = lerpf(px, ox, 0.09)
 	py = lerpf(py, oy, 0.09)
-	pet_cd -= 1.0
 	if pet_cd > 0:
-		return
+		pet_cd -= 1.0
+		if pet_cd > 0:
+			return
+	if pet_busca > 0:
+		pet_busca -= 1
+		if pet_busca > 0:
+			return
 	match pet_ia:
 		"come":
 			_mascota_come()
@@ -816,6 +830,13 @@ func _tick_mascota() -> void:
 			pet_cd = 60.0
 
 
+## La mascota está lista pero no tiene a quién: vuelve a buscar en unos cuadros sin vaciar la barra.
+## Antes se usaba pet_cd para esperar, y la barra (1 - pet_cd / recarga) temblaba entre ~95 % y lleno (#67).
+func _mascota_buscar(cuadros: int) -> void:
+	pet_cd = 0.0
+	pet_busca = cuadros
+
+
 func _mascota_come() -> void:
 	var radio := Partida.pet_radio()
 	var mejor := -1
@@ -826,7 +847,7 @@ func _mascota_come() -> void:
 			md = d
 			mejor = i
 	if mejor < 0:
-		pet_cd = 12.0
+		_mascota_buscar(12)
 		return
 	chispa(bx[mejor], by[mejor], Color("dccfe6"), 6)
 	pet_ox = lerpf(px, bx[mejor], 0.7)
@@ -844,7 +865,7 @@ func _mascota_chispa() -> void:
 	var ob := enemigo_cercano(px, py)
 	var radio := Partida.pet_radio()
 	if ob == null or dist2(ob.x, ob.y, px, py) > radio * radio:
-		pet_cd = 12.0
+		_mascota_buscar(12)
 		return
 	rayos.append({"a": Vector2(px, py), "b": Vector2(ob.x, ob.y), "t": 8})
 	golpear(ob, Partida.pet_dano() * stats.atk * stats.dano, false, ob.x, ob.y)
@@ -863,7 +884,7 @@ func _mascota_iman() -> void:
 			g.imantada = true
 			hubo = true
 	if not hubo:
-		pet_cd = 30.0
+		_mascota_buscar(30)
 		return
 	pet_ox = px
 	pet_oy = py
@@ -875,7 +896,7 @@ func _mascota_iman() -> void:
 
 func _mascota_escudo() -> void:
 	if escudo:
-		pet_cd = 30.0
+		_mascota_buscar(30)
 		return
 	escudo = true
 	pet_ox = px
@@ -2520,6 +2541,15 @@ func _revisar_cartas() -> void:
 
 func _abrir_cartas() -> void:
 	nivel_flash = 0
+	# en "cartas" viene de elegir_carta: es otra subida de la misma tanda
+	if estado == "cartas":
+		subida_n += 1
+		subida_total = maxi(subida_total, subida_n + niveles_pendientes - 1)
+		subida_flash = DESTELLO_SUBIDA
+	else:
+		subida_n = 1
+		subida_total = niveles_pendientes
+		subida_flash = 0
 	niveles_pendientes -= 1
 	cartas = _generar_cartas()
 	carta_sel = 1
@@ -2671,6 +2701,8 @@ func cambiar_cartas() -> void:
 
 func _tick_cartas() -> void:
 	carta_t += 1
+	if subida_flash > 0:
+		subida_flash -= 1
 	if carta_t < 18:
 		return
 	if Input.is_action_just_pressed("mover_izquierda") or Input.is_action_just_pressed("ui_left"):
@@ -3402,11 +3434,25 @@ func dibujar_hud(c: CanvasItem) -> void:
 			c.draw_rect(Rect2(round(bx0 + ban * f), 16, 1, 10), Color.WHITE)
 
 
+## Con varias subidas en cola, el título cuenta cuál es: así las cartas que salen al elegir no
+## parecen un cambio de cartas (#64).
+func titulo_cartas() -> String:
+	if subida_total <= 1:
+		return "¡SUBISTE DE NIVEL!"
+	if subida_n <= 1:
+		return "¡SUBISTE DE NIVEL! (1 de %d)" % subida_total
+	return "¡OTRA SUBIDA! (%d de %d)" % [subida_n, subida_total]
+
+
 func dibujar_cartas(c: CanvasItem) -> void:
 	if estado != "cartas":
 		return
 	c.draw_rect(Rect2(PX, 13, ANCHO, ALTO - 13), Color(0.03, 0.02, 0.07, 0.8))
-	UI.tc(c, PX + ANCHO / 2.0, 18, "¡SUBISTE DE NIVEL!", UI.C_ORO, 2, true)
+	var titulo := titulo_cartas()
+	var col_titulo: Color = UI.C_ORO
+	if subida_flash > 0 and (subida_flash / 4) % 2 == 0:
+		col_titulo = Color.WHITE
+	UI.tc(c, PX + ANCHO / 2.0, 18, titulo, col_titulo, 2 if UI.ancho(titulo, 2) <= ANCHO - 8 else 1, true)
 	UI.tc(c, PX + ANCHO / 2.0, 46, "Armas %d/%d  ·  Habilidades %d/%d" % [arsenal.armas.size(), Partida.max_armas(), habs.size(), Partida.max_habs()], UI.C_GRIS)
 	for i in cartas.size():
 		_dibujar_carta(c, i)
