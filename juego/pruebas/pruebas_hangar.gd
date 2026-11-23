@@ -8,7 +8,11 @@ extends "res://pruebas/pruebas_menus.gd"
 
 
 ## --sub=piezas abre esa pestaña del Arsenal y --sel=id deja seleccionada esa cosa (para las capturas).
+## --hangar_foco=id deja enfocada esa estación de la sala.
 func _abrir_en_hangar(h) -> void:
+	if args.has("hangar_foco") and h.en_sala:
+		# va después del mostrar() que deja pendiente el Hangar al armarse
+		h.sala.mostrar.call_deferred(args.hangar_foco)
 	if h.actual == null:
 		return
 	if args.has("sub") and h.actual.has_method("elegir_pestana"):
@@ -62,6 +66,7 @@ func _flujo_hangar() -> void:
 	await _fh_arsenal_secretos()
 	await _fh_seleccion()
 	await _fh_mouse()
+	await _fh_opciones_luz()
 	print("[flujo_hangar] ok=%d fallas=%d" % [f_ok, f_mal])
 	get_tree().quit()
 
@@ -83,10 +88,20 @@ func _fh_partida_nueva() -> void:
 	_check(s.botones.size() == 6, "la barra tiene las seis cosas")
 	for id in SalaHangar.ORDEN:
 		_check(s.botones.has(id) and s.botones[id].text == SalaHangar.OBJETOS[id].nombre, "la barra dice " + SalaHangar.OBJETOS[id].nombre)
-	_check(_foco() == s.botones["naves"], "el foco parte en NAVES")
+	if s.sin_foco:
+		# #63: al entrar no hay nada enfocado y la sala se ve entera
+		_check(s.foco == "" and _foco() == null, "al entrar no hay ninguna estación enfocada")
+		await _esperar(30)
+		_check(is_equal_approx(s.sombra, 0.0) and _sala_entera(s), "sin foco, la sala se ve entera y sin oscurecer")
+		await _foto_h("00_sala_sin_foco")
+		await _apretar(KEY_RIGHT, 2)
+		_check(s.foco == "naves" and _foco() == s.botones["naves"], "la primera flecha enfoca NAVES")
+	else:
+		_check(_foco() == s.botones["naves"], "el foco parte en NAVES")
 	_check(s.sombra < 1.0, "el resto se oscurece de a poco al entrar")
 	await _esperar(30)
 	_check(is_equal_approx(s.sombra, 1.0) and is_equal_approx(s.luz["naves"], 1.0), "queda la nave con luz y lo demás oscuro")
+	_check(is_equal_approx(s._brillo("naves"), 1.0) and is_equal_approx(s._brillo("equipo"), s.oscuro), "lo que no tiene foco queda en la luz de la opción (%.2f)" % s.oscuro)
 	_check(s.datos["naves"].tex != null, "el contorno se generó desde el alfa")
 	_check(is_same(s.contorno_de(s.texs["naves"]), s.datos["naves"]), "el contorno queda guardado y no se rehace")
 	_revisar_contornos(s)
@@ -161,6 +176,44 @@ func _fh_partida_nueva() -> void:
 	await _esperar(6)
 
 
+## Sin foco, todo se ve con la luz entera: el fondo, cada estación y la nave.
+func _sala_entera(s) -> bool:
+	for id in SalaHangar.ORDEN:
+		if not is_equal_approx(s._brillo(id), 1.0):
+			return false
+	return is_equal_approx(s.nave_sombra.modulate.a, 0.0)
+
+
+## Las opciones de luz y foco que elige Iván (#63): cada una entra como dice y oscurece lo que dice.
+func _fh_opciones_luz() -> void:
+	print("-- opciones de luz")
+	var SALA = load("res://pantallas/hangar_sala.gd")
+	var antes: String = SALA.opcion_luz
+	_check(SALA.OPCIONES_LUZ.has(SALA.LUZ), "la opción por defecto existe: " + SALA.LUZ)
+	# el mouse queda en la pared, lejos de la barra: así no enfoca nada al entrar
+	await _raton_mover(Vector2(320, 60))
+	for op in ["a", "b", "c", "antes"]:
+		SALA.opcion_luz = op
+		principal.ir_hangar()
+		await _esperar(10)
+		var s = principal.actual.sala
+		var def: Dictionary = SALA.OPCIONES_LUZ[op]
+		_check(is_equal_approx(s.oscuro, def.oscuro) and s.sin_foco == def.sin_foco, "opción %s: oscuro %.2f y sin foco %s" % [op, s.oscuro, s.sin_foco])
+		if def.sin_foco:
+			_check(s.foco == "" and _foco() == null, "opción %s: entra sin foco" % op)
+			await _apretar(KEY_DOWN, 2)
+			_check(s.foco == "naves", "opción %s: la primera flecha enfoca NAVES" % op)
+		else:
+			_check(s.foco == "naves" and _foco() == s.botones["naves"], "opción %s: entra con NAVES enfocada" % op)
+			await _raton_mover(Vector2(320, 60))
+			_check(s.foco == "naves", "opción %s: el mouse en la pared no quita el foco" % op)
+		await _esperar(30)
+		_check(is_equal_approx(s._brillo("fusionar"), def.oscuro), "opción %s: lo que no tiene foco queda en %.2f" % [op, def.oscuro])
+		await _apretar(KEY_ESCAPE, 8)
+		_check(principal.actual.has_signal("jugar_nivel"), "opción %s: Esc vuelve al mapa" % op)
+	SALA.opcion_luz = antes
+
+
 ## Los contornos se rehacen midiendo cuánto tardan, y se revisa que ninguno pise a su objeto.
 func _revisar_contornos(s) -> void:
 	s._contornos.clear()
@@ -215,7 +268,13 @@ func _fh_naves() -> void:
 	print("-- naves")
 	var h = principal.actual
 	var s = h.sala
-	_check(s.foco == "naves", "la sala parte en NAVES")
+	if s.sin_foco:
+		_check(s.foco == "" and _foco() == null, "la sala parte sin foco")
+		# sin foco, Enter solo enfoca: no abre nada sin que se vea qué
+		await _apretar(KEY_ENTER, 4)
+		_check(h.en_sala and s.foco == "naves", "Enter sin foco enfoca NAVES y no abre nada")
+	else:
+		_check(s.foco == "naves", "la sala parte en NAVES")
 	await _apretar(KEY_ENTER, 8)
 	_check(not h.en_sala and h.pestana == "naves", "Enter abre Naves")
 	var g = h.galeria
@@ -603,9 +662,22 @@ func _fh_mouse() -> void:
 	_check(hallado == "mascota", "el centro de la tina es la tina: " + hallado)
 	await _raton_mover(c_mascota)
 	_check(s.foco == "mascota", "pasar el mouse por el objeto lo enfoca")
-	# lo transparente de un sprite no se toca: el mouse sigue en lo que estaba
+	# bajar a leer el cartel no le quita el foco
+	await _raton_mover(Vector2(320, 338))
+	_check(s.foco == "mascota", "el mouse en el cartel no le quita el foco")
+	# lo transparente de un sprite no se toca
 	await _raton_mover(Vector2(320, 60))
-	_check(s.objeto_en(Vector2(320, 60)) == "" and s.foco == "mascota", "en la pared no se enfoca nada")
+	if s.sin_foco:
+		_check(s.objeto_en(Vector2(320, 60)) == "" and s.foco == "" and _foco() == null, "el mouse en la pared deja la sala sin foco")
+		await _esperar(30)
+		_check(_sala_entera(s), "y la sala vuelve a verse entera")
+		# el teclado sigue funcionando después del mouse
+		await _apretar(KEY_LEFT, 4)
+		_check(s.foco == "naves" and _foco() == s.botones["naves"], "una flecha después del mouse vuelve a enfocar")
+		await _raton_mover(c_mascota)
+		_check(s.foco == "mascota", "y el mouse vuelve a enfocar la tina")
+	else:
+		_check(s.objeto_en(Vector2(320, 60)) == "" and s.foco == "mascota", "en la pared no se enfoca nada")
 	await _raton_clic(c_mascota)
 	_check(not h.en_sala and h.pestana == "mascota", "clic en el objeto abre su estación")
 	var m = h.actual

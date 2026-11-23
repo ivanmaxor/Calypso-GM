@@ -146,7 +146,7 @@ Las letras viven en `juego/arte/fuente/` y se cargan en `nucleo/datos.gd`.
 | Chispita | Puede leerse como abeja |
 | Caparazón | Los hexágonos de la concha quedan como cuadrados |
 | Puerta del Hangar | Se ve muy de lado |
-| Oscurecido del Hangar (`OSCURO = 0.42` en `hangar_sala.gd`) | Apaga los chistes del fondo. Se sugirió 0,5-0,55 |
+| Oscurecido del Hangar (`OPCIONES_LUZ` en `hangar_sala.gd`) | Con 0,42 apagaba los chistes del fondo y la sala siempre tenía algo enfocado. En #63 se propone entrar sin foco (la sala entera, con toda la luz) y bajar el oscurecido a 0,55 (opción A, por defecto). **A decidir por Iván**: hojas en `docs/capturas/m02/` |
 
 ## 9. Audio (también es arte)
 

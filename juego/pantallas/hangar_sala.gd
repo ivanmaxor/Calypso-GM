@@ -2,12 +2,24 @@ extends Control
 ## La habitación del Hangar: el baño de Don Tuerca hecho taller. Cada objeto es una estación.
 ## Se cruza con las flechas, WASD o el mouse. Lo que tiene foco brilla y lo demás se oscurece de a poco.
 ## Enter o clic lo abre. Dónde está cada cosa sale de SalaHangar: aquí no se asume ningún tamaño.
+## Con "sin foco" (#63), al entrar no hay nada enfocado y la sala se ve entera: la primera flecha enfoca
+## una estación, y el mouse en una parte vacía de la habitación vuelve a dejarla sin foco.
 
 signal abrir(id: String)
 signal salir
 
-## La luz que le queda a lo que no tiene foco.
-const OSCURO := 0.42
+## Opciones de luz y foco para que elija Iván (#63). oscuro: la luz que le queda a lo que no tiene foco
+## cuando sí hay algo enfocado. sin_foco: si la sala puede quedar sin nada enfocado.
+## "antes" es como estaba en la v0.4.0-rc.1. Las pruebas la cambian con --hangar_luz=a|b|c|antes.
+const OPCIONES_LUZ := {
+	"a": {"oscuro": 0.55, "sin_foco": true},
+	"b": {"oscuro": 0.5, "sin_foco": true},
+	"c": {"oscuro": 0.55, "sin_foco": false},
+	"antes": {"oscuro": 0.42, "sin_foco": false},
+}
+## La que va en el juego mientras Iván no elija otra.
+const LUZ := "a"
+static var opcion_luz := LUZ
 ## Cuánto cambia la luz por segundo: el fundido dura un cuarto de segundo.
 const VEL_LUZ := 4.0
 ## Desde qué alfa un píxel cuenta como parte del objeto. Las sombras suaves no se contornean.
@@ -21,7 +33,10 @@ const ESC_NAVE := 2.0
 static var _contornos := {}
 
 var h  # el Hangar: dice qué está abierto y cómo se abre lo cerrado
+## La estación enfocada, o "" si no hay ninguna.
 var foco := ""
+var oscuro := 0.55
+var sin_foco := true
 var orden: Array = []
 var orden_z: Array = []
 var botones := {}
@@ -47,6 +62,9 @@ func _ready() -> void:
 	position = Vector2.ZERO
 	size = Vector2(640, 360)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	var op: Dictionary = OPCIONES_LUZ.get(opcion_luz, OPCIONES_LUZ[LUZ])
+	oscuro = op.oscuro
+	sin_foco = op.sin_foco
 	fondo = Datos.tex("hangar_fondo")
 	for id in SalaHangar.ORDEN:
 		texs[id] = Datos.tex("hangar_obj_" + id)
@@ -144,7 +162,7 @@ func _vecino_vertical(id: String, dir: float) -> Button:
 	return mejor
 
 
-## La vuelve a mostrar con el foco en ese objeto. La nave y la mascota pueden haber cambiado.
+## La vuelve a mostrar con el foco en ese objeto, o sin foco con id "". La nave y la mascota pueden haber cambiado.
 func mostrar(id: String) -> void:
 	visible = true
 	set_process(true)
@@ -152,11 +170,31 @@ func mostrar(id: String) -> void:
 	sombra = 0.0
 	for k in luz:
 		luz[k] = 0.0
+	cartel_a = 1.0
+	if id == "":
+		foco = ""
+		desenfocar()
+		return
 	callado = true
 	foco = id
-	cartel_a = 1.0
 	botones[id].grab_focus()
 	callado = false
+
+
+## Deja la sala sin nada enfocado: se ve entera, sin oscurecer nada.
+func desenfocar() -> void:
+	if foco != "":
+		cartel_a = 0.0
+	foco = ""
+	if is_inside_tree():
+		var dueno := get_viewport().gui_get_focus_owner()
+		if dueno != null and botones.values().has(dueno):
+			dueno.release_focus()
+
+
+## Enfoca una estación si no hay ninguna: es lo que hace la primera flecha o tecla de menú.
+func recuperar_foco(por_defecto: String) -> void:
+	botones[foco if foco != "" else por_defecto].grab_focus()
 
 
 func refrescar() -> void:
@@ -188,7 +226,8 @@ func activar(id: String) -> void:
 
 func _process(delta: float) -> void:
 	t += delta
-	sombra = move_toward(sombra, 1.0, delta * VEL_LUZ)
+	# sin foco no se oscurece nada: la sala se ve entera
+	sombra = move_toward(sombra, 0.0 if foco == "" else 1.0, delta * VEL_LUZ)
 	for id in luz:
 		luz[id] = move_toward(luz[id], 1.0 if id == foco else 0.0, delta * VEL_LUZ)
 	temblor = move_toward(temblor, 0.0, delta * 3.0)
@@ -208,16 +247,17 @@ func _process(delta: float) -> void:
 	cartel.queue_redraw()
 
 
-## Lo que se ve de un objeto: 1 con foco, OSCURO sin foco. Al entrar, todo parte encendido y se va apagando.
+## Lo que se ve de un objeto: 1 con foco, `oscuro` si otro tiene el foco y 1 si no hay foco.
+## Al entrar, todo parte encendido y, si algo queda enfocado, lo demás se va apagando.
 func _brillo(id: String) -> float:
-	return lerpf(lerpf(1.0, OSCURO, sombra), 1.0, smoothstep(0.0, 1.0, luz[id]))
+	return lerpf(lerpf(1.0, oscuro, sombra), 1.0, smoothstep(0.0, 1.0, luz[id]))
 
 
 # =================================================================================================
 # DIBUJO
 # =================================================================================================
 func _draw() -> void:
-	var b := lerpf(1.0, OSCURO, sombra)
+	var b := lerpf(1.0, oscuro, sombra)
 	draw_texture_rect(fondo, Rect2(0, 0, 640, 360), false, Color(b, b, b))
 	for id in orden_z:
 		var v := _brillo(id)
@@ -264,9 +304,17 @@ func _dibujar_frente() -> void:
 
 
 func _dibujar_cartel() -> void:
-	if foco == "":
-		return
 	var c := cartel
+	if foco == "":
+		# sin foco, el cartel solo dice cómo se elige y cómo se sale
+		var rv := Rect2(8, 321, 624, 35)
+		c.draw_rect(rv, Color(0.06, 0.05, 0.11, 0.96))
+		c.draw_rect(rv, UI.C_LINEA, false, 1.0)
+		UI.t(c, 16, 322, "HANGAR", UI.C_ORO, 2, true)
+		UI.t(c, 142, 330, "Elige una estación con el mouse o las flechas.", UI.C_TEXTO)
+		var volver := "Esc: volver al mapa"
+		UI.t(c, rv.end.x - 8 - UI.ancho(volver), 330, volver, UI.C_GRIS)
+		return
 	var o: Dictionary = SalaHangar.OBJETOS[foco]
 	var abierta: bool = h.esta_abierta(foco)
 	var dx := roundf(sin(t * 46.0) * 3.0 * temblor)
@@ -324,12 +372,20 @@ func _gui_input(ev: InputEvent) -> void:
 		var id := objeto_en(ev.position)
 		if id != "" and id != foco:
 			botones[id].grab_focus()
+		elif id == "" and sin_foco and foco != "" and en_lo_vacio(ev.position):
+			desenfocar()
 	elif ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
 		var id := objeto_en(ev.position)
 		if id != "":
 			botones[id].grab_focus()
 			accept_event()
 			activar(id)
+
+
+## Si ese punto es parte vacía de la habitación. La barra de arriba y el cartel de abajo no cuentan:
+## así el foco no se pierde al pasar entre dos botones ni al bajar el mouse a leer el cartel.
+func en_lo_vacio(p: Vector2) -> bool:
+	return p.y >= 26.0 and p.y < 321.0 and objeto_en(p) == ""
 
 
 ## Qué objeto hay en ese punto. Se mira el alfa: lo transparente de un sprite no se puede tocar.

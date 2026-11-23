@@ -4,6 +4,16 @@ Cada decisión con fecha, qué se decidió, alternativas, por qué y qué implic
 
 ---
 
+### 2026-11-22: Luz y foco de la sala del Hangar (M02, #63). Propuesta, a decidir por Iván
+- **Qué:** la sala del Hangar puede quedar **sin foco**: al entrar desde el mapa no hay ninguna estación enfocada y se ve entera, con toda la luz. La primera flecha, tecla de menú o botón del mando enfoca NAVES (o la última estación abierta). El mouse sobre una estación la enfoca, y el mouse en una parte vacía de la habitación vuelve a dejarla sin foco (la barra de arriba y el cartel de abajo no cuentan). Cuando sí hay algo enfocado, lo demás baja a **0,55** de luz en vez de 0,42. Al volver de una estación con Esc, el foco queda en esa estación, como antes.
+- **Alternativas** (en `OPCIONES_LUZ` de `hangar_sala.gd`; se prueban con `--hangar_luz=a|b|c|antes`):
+  - **A (por defecto):** sin foco + 0,55;
+  - **B:** sin foco + 0,50;
+  - **C:** siempre con foco, solo menos oscuro (0,55);
+  - **antes:** siempre con foco y 0,42, como en la `v0.4.0-rc.1`.
+- **Por qué A:** Alexander dijo que la sala estaba "siempre oscura" y "siempre con algo seleccionado", así que no se podía mirar el fondo. Sin foco se resuelven las dos cosas al entrar. De lo que sugería la `guia-arte.md` §8 (0,5 a 0,55), 0,55 es lo que más deja leer los chistes del fondo, y lo enfocado se sigue distinguiendo bien por el contorno dorado y la luz entera. C mejora la luz, pero no le da a nadie un momento para mirar la sala.
+- **Implica:** Iván elige la opción mirando `docs/capturas/m02/` o jugando. Para cambiarla basta con cambiar `LUZ` en `hangar_sala.gd`; después se pueden borrar las opciones que sobren y sus ramas en `pruebas_hangar.gd`. Nadie lo ha jugado todavía con estos cambios.
+
 ### 2026-11-22: Cómo se ve la hitbox jugando normal (#58). **Propuesta, a decidir por Iván**
 - **Qué:** en la prueba de la rc.1 (#44), el aro al 70 % "se nota demasiado". Quedan tres opciones detrás de `ESTILO_HITBOX` en `combate.gd` (y `--hitbox=<estilo>` en pruebas):
   - `"tenue"`: el aro siempre, al 35 %, con el centro blanco;

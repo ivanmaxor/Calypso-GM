@@ -47,7 +47,9 @@ func _ready() -> void:
 	else:
 		# lo que se pide cerrado se muestra en la sala, para ver cómo se abre
 		pestana = inicial if PESTANAS.has(inicial) else "naves"
-		sala.mostrar.call_deferred(pestana)
+		# entrar sin pedir nada deja la sala sin foco (#63), si la opción de luz lo permite.
+		# pestana queda como la que enfoca la primera flecha.
+		sala.mostrar.call_deferred("" if inicial == "" and sala.sin_foco else pestana)
 	Sonido.musica_menu()
 
 
@@ -356,13 +358,14 @@ func _unhandled_input(ev: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				_cambiar(-1 if ev.button_index == JOY_BUTTON_LEFT_SHOULDER else 1)
 				return
-	# si un clic en el vacío se llevó el foco, el teclado lo recupera con cualquier tecla de menú
+	# si no hay foco (la sala sin foco, o un clic en el vacío se lo llevó), el teclado o el mando
+	# lo recuperan con cualquier tecla de menú
 	if get_viewport().gui_get_focus_owner() == null:
 		for accion in ["ui_up", "ui_down", "ui_left", "ui_right", "ui_accept"]:
 			if ev.is_action_pressed(accion):
 				get_viewport().set_input_as_handled()
 				if en_sala:
-					sala.botones[sala.foco].grab_focus()
+					sala.recuperar_foco(pestana)
 				else:
 					_enfocar_contenido()
 				return
