@@ -109,7 +109,10 @@ w()
 
 w("## Piezas")
 w()
-w("Cada pieza da su base por rareza (× multiplicador) y suma un 8 % de esa base por nivel de mejora. Las pasivas se abren")
+mej = d["mejora_por_nivel"]
+mej_txt = ", ".join("%s %s %%" % (d["dificultades"][k]["nombre"], num(v * 100)) for k, v in mej.items())
+w("Cada pieza da su base por rareza (× multiplicador) y suma un porcentaje de esa base por nivel de mejora, según la")
+w("dificultad de la partida: %s. Las pasivas se abren" % mej_txt)
 w("según la rareza (`r`: 2 Poco común, 3 Raro, 4 Épico, 5 Legendario).")
 w()
 w("| id | Ranura | Nombre | Qué hace | Base | Pasivas | Mundo | Empieza a caer |")
@@ -139,7 +142,7 @@ w()
 
 w("## Niveles")
 w()
-w("| id | Nombre | Duración | Estrella 2 (golpes máx.) | Estrella 3 (cadena) | Enemigos | Jefe | Premio |")
+w("| id | Nombre | Duración | Estrella 2 (golpes máx.) | Estrella 3 (cadena en Normal) | Enemigos | Jefe | Premio |")
 w("|---|---|---|---|---|---|---|---|")
 for k, n in d["niveles"].items():
     p = n.get("premio", {})
@@ -156,19 +159,20 @@ w("Multiplicadores sobre Normal: `hp` y `dano` de los enemigos, `vel` de sus bal
 w("(menos es más seguido), `botin` y `chatarra`.")
 w("Presión: `ritmo` multiplica los enemigos por segundo del director, `inicio` sube además el comienzo,")
 w("`ganas` es cuánto disparan los Bots al empezar el nivel, `salva` = tiempo entre salvas y `jefe cd` = tiempo")
-w("entre ataques de los jefes (menos es más seguido).")
+w("entre ataques de los jefes (menos es más seguido). `cadena` multiplica la meta de cadena de la 3.ª estrella")
+w("(se redondea a múltiplos de 5).")
 w()
-w("| id | Nombre | hp | daño | vel | disparo | botín | chatarra | ritmo | inicio | ganas | salva | jefe cd | Notas |")
-w("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+w("| id | Nombre | hp | daño | vel | disparo | botín | chatarra | ritmo | inicio | ganas | salva | jefe cd | cadena | Notas |")
+w("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
 for k, x in d["dificultades"].items():
     notas = []
     if x.get("sin_pizza"):
         notas.append("sin pizzas")
     if x.get("requiere"):
         notas.append("requiere %s" % x["requiere"])
-    w("| `%s` | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % (k, x["nombre"], num(x["hp"]), num(x["dano"]), num(x["vel"]),
+    w("| `%s` | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % (k, x["nombre"], num(x["hp"]), num(x["dano"]), num(x["vel"]),
         num(x["disparo"]), num(x["botin"]), num(x["chatarra"]), num(x.get("ritmo", 1)), num(x.get("inicio", 1)),
-        num(x.get("ganas", 0.35)), num(x.get("salva", 1)), num(x.get("jefe_cd", 1)), ", ".join(notas)))
+        num(x.get("ganas", 0.35)), num(x.get("salva", 1)), num(x.get("jefe_cd", 1)), num(x.get("cadena", 1)), ", ".join(notas)))
 w()
 
 w("## Desafíos")

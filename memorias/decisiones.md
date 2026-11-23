@@ -14,6 +14,26 @@ Cada decisión con fecha, qué se decidió, alternativas, por qué y qué implic
 - **Por qué A:** Alexander dijo que la sala estaba "siempre oscura" y "siempre con algo seleccionado", así que no se podía mirar el fondo. Sin foco se resuelven las dos cosas al entrar. De lo que sugería la `guia-arte.md` §8 (0,5 a 0,55), 0,55 es lo que más deja leer los chistes del fondo, y lo enfocado se sigue distinguiendo bien por el contorno dorado y la luz entera. C mejora la luz, pero no le da a nadie un momento para mirar la sala.
 - **Implica:** Iván elige la opción mirando `docs/capturas/m02/` o jugando. Para cambiarla basta con cambiar `LUZ` en `hangar_sala.gd`; después se pueden borrar las opciones que sobren y sus ramas en `pruebas_hangar.gd`. Nadie lo ha jugado todavía con estos cambios.
 
+### 2026-11-22: Cómo se ve la hitbox jugando normal (#58). **Propuesta, a decidir por Iván**
+- **Qué:** en la prueba de la rc.1 (#44), el aro al 70 % "se nota demasiado". Quedan tres opciones detrás de `ESTILO_HITBOX` en `combate.gd` (y `--hitbox=<estilo>` en pruebas):
+  - `"tenue"`: el aro siempre, al 35 %, con el centro blanco;
+  - `"cercana"` (**por defecto en la propuesta**): solo el centro blanco; el aro (70 %) aparece cuando una bala pasa a menos de 40 px y se apaga solo en ~0,4 s;
+  - `"foco"`: nada jugando normal; se ve en foco o Desync, y el 1-1 suma la pista "Con {foco} vas lento y ves tu punto rosado: solo ahí te pegan.".
+  En foco y en Desync no cambia nada: el disco entero, como en M01. La hitbox real tampoco (3,5).
+- **Alternativas:** las otras dos opciones; un aro más fino (ya es de 1 px, no hay más fino).
+- **Por qué `"cercana"`:** en calma no hay nada que preguntarse (solo un punto blanco que se lee como cabina), y el aro sale justo cuando sirve, al esquivar. `"tenue"` sigue mostrando algo sin explicación; `"foco"` deja de mostrar dónde te pegan, que fue lo que pidieron en la v0.3 al agrandar la hitbox.
+- **Implica:** Iván elige con la hoja de comparación del PR (`docs/capturas/m01/`). Cambiar de opción es una línea. Falta que una persona lo juegue.
+
+### 2026-11-22: Historia A, Buen Chico
+- **Qué:** de las tres historias (`docs/04_historia_y_mundos.md`) se elige la **A, Buen Chico**: el chatarrero, su mascota alienígena y los mundos que el Hambre se va tragando.
+- **Alternativas:** B, Clon 412; C, Cartucho.
+- **Por qué:** a Iván le gustó mucho más su giro final. Además, el giro ocurre en el sistema central del juego, así que el jugador es parte de él.
+- **Implica:**
+  - el giro vive solo en `docs/spoilers/`;
+  - todo lo que se escriba en el juego (diálogos, mapas, jefes, mascotas) tiene que calzar con la A;
+  - quien no quiera saber el giro trabaja con lo que está fuera de `docs/spoilers/`, y lo que dependa del giro lo revisa Iván.
+- **Observación de Iván al elegirla:** el combate ya engancha (mejorar, matar más, hacer cadenas), pero **falta un gancho narrativo**. Al principio y durante la historia no se entiende por qué estás ahí ni cuál es tu objetivo, y entonces el jugador no sabe para qué sube de nivel. Es la tarea N01 de la v0.5.
+
 ### 2026-11-22: Indicador de hitbox discreto, entero en foco y en Desync (M01)
 - **Qué:** jugando normal, la hitbox se ve como un aro rosado fino del tamaño real con un centro chico. Con foco (Shift) o durante el Desync (también al reconectar y en la cascada), se ve el disco entero como antes. La hitbox real no cambia (3,5). Reemplaza el "se ve siempre como un punto rosado" de la v0.3.
 - **Alternativas:** más chico o semitransparente siempre; verse solo en foco; integrarlo a la cabina de cada nave.
@@ -103,7 +123,7 @@ Cada decisión con fecha, qué se decidió, alternativas, por qué y qué implic
   - piezas de Común a Mítico que se fusionan (3 → 1) y se mejoran con chatarra;
   - mascotas.
   Solo apariencias no bastaban.
-- **Mundos con personalidad propia**, cada uno con su regla, enemigos y jefe. La historia con un giro: se descartó la de la Odisea por aburrida. **Pendiente elegir entre A, B y C** (`docs/04_historia_y_mundos.md`); se usa la A.
+- **Mundos con personalidad propia**, cada uno con su regla, enemigos y jefe. La historia con un giro: se descartó la de la Odisea por aburrida. Se eligió la A el 2026-11-22 (ver arriba).
 - **Desync, la mecánica central:** inspirada en la Zona de Tetris Effect, la gratificación diferida.
 - **Arte por código sin IA de imágenes:** modelos 3D simples renderizados a pixel art (técnica de Dead Cells). **Música** solo con licencias libres verificadas. **Efectos** generados con el método sfxr.
 - **Pantalla de 640×360** con escala entera.

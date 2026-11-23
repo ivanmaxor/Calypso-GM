@@ -16,12 +16,27 @@ const MAX_TIROS := 140
 const TOPE_DIVIDE := 60  # una bala que se divide no pasa de esto en pantalla
 const VIDA_GIRO := 110  # una bala que persigue no vive más que esto
 const HITBOX := 3.5
+## #58: cómo se ve la hitbox jugando normal (en foco o Desync siempre se ve entera). Propuesta, a decidir
+## por Iván; para cambiar de opción basta esta línea (en pruebas, --hitbox=<estilo>):
+##   "tenue":   el aro siempre, al 35 %, con el centro blanco;
+##   "cercana": solo el centro blanco; el aro aparece cuando una bala se acerca;
+##   "foco":    nada jugando normal; se ve en foco o Desync, y el 1-1 lo explica con una pista.
+const ESTILO_HITBOX := "cercana"
+const ESTILOS_HITBOX := ["tenue", "cercana", "foco"]
+const ALFA_ARO_TENUE := 0.35
+const ALFA_ARO_CERCA := 0.7
+const DIST_ARO_CERCA := 40.0  # una bala a menos de esto (de centro a centro) enciende el aro
+const ARO_SUBE := 0.2  # por paso fijo: aparece en 5 pasos (~0,08 s)
+const ARO_BAJA := 0.04  # y se apaga en 25 (~0,4 s), para que no parpadee
+const PISTA_HITBOX_FOCO := [20.0, "Con {foco} vas lento y ves tu punto rosado: solo ahí te pegan."]
 const IFRAMES_GOLPE := 70
 const IFRAMES_ESCUDO_DESYNC := 45
 ## Después de la cascada, las cartas esperan a que la XP llegue a la nave (como máximo esto, en cuadros)
 ## y, al subir de nivel, un respiro con la barra destellando antes de elegir (M14). Solo cambia el ritmo.
 const TRAS_DESYNC := 120
 const RESPIRO_NIVEL := 30
+## Cuadros que destella el título de las cartas cuando sale otra subida seguida (#64).
+const DESTELLO_SUBIDA := 24
 const TIERS_CADENA := [10, 25, 50, 100, 200]
 const MULT_CADENA := [1.0, 1.1, 1.2, 1.35, 1.5, 1.75]
 const CADENA_LARGA := 120.0  # con esta cadena la ventana ya está en su mínimo
@@ -245,6 +260,8 @@ var dvx := 0.0
 var dvy := 0.0
 var foco := false
 var foco_alternado := false
+var estilo_hitbox: String = ESTILO_HITBOX
+var aro_hitbox := 0.0  # estilo "cercana": de 0 a 1, cuánto se ve el aro
 var quieto := false
 var quieto_t := 0
 var vivo := true
@@ -291,6 +308,12 @@ var habs := {}
 var cartas := []
 var carta_sel := 0
 var carta_t := 0
+## Subidas seguidas (#64): cuál tanda de cartas se ve (1, 2...) y cuántas hay en total. Al elegir una carta
+## con otra subida en cola salen cartas nuevas al tiro, y sin aviso eso parecía un cambio de cartas.
+var subida_n := 0
+var subida_total := 0
+## Cuadros que le quedan al destello del título cuando sale otra tanda.
+var subida_flash := 0
 var cambios_restantes := 1
 var kills := 0
 var kills_tipo := {}
@@ -340,6 +363,7 @@ var py := 320.0
 var pet_id := ""
 var pet_ia := ""
 var pet_cd := 200.0
+var pet_busca := 0  # lista pero sin a quién: cuadros para volver a buscar, con la barra llena (#67)
 var pet_boca := 0
 var pet_forma := 0
 var pet_nivel := 1
@@ -569,7 +593,7 @@ func _tick_pistas() -> void:
 	# Solo la primera vez que juegas el nivel
 	if Partida.nivel_completado(nivel_id):
 		return
-	var lista: Array = nivel.pistas
+	var lista: Array = pistas_nivel()
 	if pista_i < lista.size() and guion_t >= lista[pista_i][0]:
 		_pista(Datos.con_teclas(lista[pista_i][1]))
 		pista_i += 1
@@ -578,6 +602,16 @@ func _tick_pistas() -> void:
 		barra = 100.0
 		_pista(Datos.con_teclas("¡Barra llena! Pulsa {desync} y sigue disparando."), 420)
 		Sonido.tocar("carta", 0.75)
+
+
+## Las pistas del nivel, en orden. Con el estilo de hitbox "foco" (#58), el 1-1 suma una que explica el punto.
+func pistas_nivel() -> Array:
+	var lista: Array = nivel.pistas
+	if estilo_hitbox == "foco" and nivel_id == "1-1":
+		lista = lista.duplicate()
+		lista.append(PISTA_HITBOX_FOCO)
+		lista.sort_custom(func(a, b): return a[0] < b[0])
+	return lista
 
 
 func _pista(s: String, dur := 300) -> void:
@@ -615,6 +649,43 @@ func hitbox_destacada() -> bool:
 ## una habilidad la achique.
 func centro_hitbox_discreta() -> float:
 	return minf(1.5, hitbox() * 0.45)
+
+
+## #58: opacidad del aro jugando normal, según el estilo. 0 = no se dibuja.
+func alfa_aro_hitbox() -> float:
+	match estilo_hitbox:
+		"tenue":
+			return ALFA_ARO_TENUE
+		"cercana":
+			return ALFA_ARO_CERCA * aro_hitbox
+	return 0.0
+
+
+## #58: el centro blanco se ve jugando normal, salvo en el estilo "foco".
+func centro_hitbox_visible() -> bool:
+	return estilo_hitbox != "foco"
+
+
+## #58: ¿hay una bala enemiga a menos de DIST_ARO_CERCA de la nave?
+func bala_cerca_de_hitbox() -> bool:
+	var r2 := DIST_ARO_CERCA * DIST_ARO_CERCA
+	for b in bn:
+		var dx := bx[b] - jx
+		var dy := by[b] - jy
+		if dx * dx + dy * dy < r2:
+			return true
+	return false
+
+
+## #58: el aro del estilo "cercana" sube rápido cuando hay una bala cerca y baja lento. Va por paso fijo.
+func _tick_aro_hitbox() -> void:
+	if estilo_hitbox != "cercana":
+		aro_hitbox = 0.0
+		return
+	if bala_cerca_de_hitbox():
+		aro_hitbox = move_toward(aro_hitbox, 1.0, ARO_SUBE)
+	else:
+		aro_hitbox = move_toward(aro_hitbox, 0.0, ARO_BAJA)
 
 
 func _tick_jugador() -> void:
@@ -674,6 +745,7 @@ func _tick_jugador() -> void:
 			roce_bono = 0.0
 	if tiene_desync and estado == "jugando" and barra >= 100.0 and Input.is_action_just_pressed("desync"):
 		_empezar_desync()
+	_tick_aro_hitbox()
 	if habs.has("tank") and not escudo:
 		escudo_cd -= 1.0
 		if escudo_cd <= 0:
@@ -800,9 +872,14 @@ func _tick_mascota() -> void:
 		oy = pet_oy
 	px = lerpf(px, ox, 0.09)
 	py = lerpf(py, oy, 0.09)
-	pet_cd -= 1.0
 	if pet_cd > 0:
-		return
+		pet_cd -= 1.0
+		if pet_cd > 0:
+			return
+	if pet_busca > 0:
+		pet_busca -= 1
+		if pet_busca > 0:
+			return
 	match pet_ia:
 		"come":
 			_mascota_come()
@@ -816,6 +893,13 @@ func _tick_mascota() -> void:
 			pet_cd = 60.0
 
 
+## La mascota está lista pero no tiene a quién: vuelve a buscar en unos cuadros sin vaciar la barra.
+## Antes se usaba pet_cd para esperar, y la barra (1 - pet_cd / recarga) temblaba entre ~95 % y lleno (#67).
+func _mascota_buscar(cuadros: int) -> void:
+	pet_cd = 0.0
+	pet_busca = cuadros
+
+
 func _mascota_come() -> void:
 	var radio := Partida.pet_radio()
 	var mejor := -1
@@ -826,7 +910,7 @@ func _mascota_come() -> void:
 			md = d
 			mejor = i
 	if mejor < 0:
-		pet_cd = 12.0
+		_mascota_buscar(12)
 		return
 	chispa(bx[mejor], by[mejor], Color("dccfe6"), 6)
 	pet_ox = lerpf(px, bx[mejor], 0.7)
@@ -844,7 +928,7 @@ func _mascota_chispa() -> void:
 	var ob := enemigo_cercano(px, py)
 	var radio := Partida.pet_radio()
 	if ob == null or dist2(ob.x, ob.y, px, py) > radio * radio:
-		pet_cd = 12.0
+		_mascota_buscar(12)
 		return
 	rayos.append({"a": Vector2(px, py), "b": Vector2(ob.x, ob.y), "t": 8})
 	golpear(ob, Partida.pet_dano() * stats.atk * stats.dano, false, ob.x, ob.y)
@@ -863,7 +947,7 @@ func _mascota_iman() -> void:
 			g.imantada = true
 			hubo = true
 	if not hubo:
-		pet_cd = 30.0
+		_mascota_buscar(30)
 		return
 	pet_ox = px
 	pet_oy = py
@@ -875,7 +959,7 @@ func _mascota_iman() -> void:
 
 func _mascota_escudo() -> void:
 	if escudo:
-		pet_cd = 30.0
+		_mascota_buscar(30)
 		return
 	escudo = true
 	pet_ox = px
@@ -2520,6 +2604,15 @@ func _revisar_cartas() -> void:
 
 func _abrir_cartas() -> void:
 	nivel_flash = 0
+	# en "cartas" viene de elegir_carta: es otra subida de la misma tanda
+	if estado == "cartas":
+		subida_n += 1
+		subida_total = maxi(subida_total, subida_n + niveles_pendientes - 1)
+		subida_flash = DESTELLO_SUBIDA
+	else:
+		subida_n = 1
+		subida_total = niveles_pendientes
+		subida_flash = 0
 	niveles_pendientes -= 1
 	cartas = _generar_cartas()
 	carta_sel = 1
@@ -2671,6 +2764,8 @@ func cambiar_cartas() -> void:
 
 func _tick_cartas() -> void:
 	carta_t += 1
+	if subida_flash > 0:
+		subida_flash -= 1
 	if carta_t < 18:
 		return
 	if Input.is_action_just_pressed("mover_izquierda") or Input.is_action_just_pressed("ui_left"):
@@ -3018,7 +3113,7 @@ func dibujar_frente(c: CanvasItem) -> void:
 		c.draw_rect(Rect2(round(jx) - 2, round(jy) - 20, 4, 4), Color(1, 1, 0.8))
 	if vivo:
 		# el punto debil siempre se ve, del tamaño real de lo que te puede pegar. Entero en foco o Desync;
-		# jugando normal, solo el contorno y el centro, para que no parezca una bala pegada a la nave (M01)
+		# jugando normal, discreto según ESTILO_HITBOX, para que no parezca una bala pegada a la nave (M01, #58)
 		var pos := Vector2(round(jx), round(jy))
 		var hb := hitbox()
 		if hitbox_destacada():
@@ -3026,10 +3121,13 @@ func dibujar_frente(c: CanvasItem) -> void:
 			c.draw_circle(pos, hb, Color("ff6fb5"))
 			c.draw_circle(pos, maxf(hb * 0.4, 1.0), Color.WHITE)
 		else:
-			c.draw_arc(pos, hb, 0.0, TAU, 16, Color(Color("ff6fb5"), 0.7), 1.0)
-			var rc := centro_hitbox_discreta()
-			c.draw_circle(pos, rc, Color("0d0a18"))
-			c.draw_circle(pos, rc * 0.66, Color.WHITE)
+			var alfa := alfa_aro_hitbox()
+			if alfa > 0.01:
+				c.draw_arc(pos, hb, 0.0, TAU, 16, Color(Color("ff6fb5"), alfa), 1.0)
+			if centro_hitbox_visible():
+				var rc := centro_hitbox_discreta()
+				c.draw_circle(pos, rc, Color("0d0a18"))
+				c.draw_circle(pos, rc * 0.66, Color.WHITE)
 		if foco:
 			var n := 16
 			for k in n:
@@ -3331,11 +3429,12 @@ func dibujar_hud(c: CanvasItem) -> void:
 				c.draw_rect(Rect2(d + 5 + 92.0 * f, 13, 2, 12), UI.C_CIAN)
 		# estrellas por conseguir
 		var ok_golpes: bool = golpes <= nivel.golpes
-		var ok_cadena: bool = max_cadena >= nivel.cadena
+		var meta_cadena: int = Partida.meta_cadena(nivel_id)
+		var ok_cadena: bool = max_cadena >= meta_cadena
 		c.draw_texture(Datos.tex("ui_estrella" if ok_golpes else "ui_estrella_vacia"), Vector2(d + 4, 28))
 		UI.t(c, d + 20, 27, "Golpes %d/%d" % [golpes, nivel.golpes], UI.C_TEXTO if ok_golpes else UI.C_ROJO)
 		c.draw_texture(Datos.tex("ui_estrella" if ok_cadena else "ui_estrella_vacia"), Vector2(d + 4, 44))
-		UI.t(c, d + 20, 43, "Cadena %d/%d" % [mini(max_cadena, nivel.cadena), nivel.cadena], UI.C_TEXTO if ok_cadena else UI.C_GRIS)
+		UI.t(c, d + 20, 43, "Cadena %d/%d" % [mini(max_cadena, meta_cadena), meta_cadena], UI.C_TEXTO if ok_cadena else UI.C_GRIS)
 	if ciclo > 0:
 		UI.t(c, d + 76, 0, "NG+%d" % ciclo, UI.C_ROJO)
 	# cadena
@@ -3402,11 +3501,25 @@ func dibujar_hud(c: CanvasItem) -> void:
 			c.draw_rect(Rect2(round(bx0 + ban * f), 16, 1, 10), Color.WHITE)
 
 
+## Con varias subidas en cola, el título cuenta cuál es: así las cartas que salen al elegir no
+## parecen un cambio de cartas (#64).
+func titulo_cartas() -> String:
+	if subida_total <= 1:
+		return "¡SUBISTE DE NIVEL!"
+	if subida_n <= 1:
+		return "¡SUBISTE DE NIVEL! (1 de %d)" % subida_total
+	return "¡OTRA SUBIDA! (%d de %d)" % [subida_n, subida_total]
+
+
 func dibujar_cartas(c: CanvasItem) -> void:
 	if estado != "cartas":
 		return
 	c.draw_rect(Rect2(PX, 13, ANCHO, ALTO - 13), Color(0.03, 0.02, 0.07, 0.8))
-	UI.tc(c, PX + ANCHO / 2.0, 18, "¡SUBISTE DE NIVEL!", UI.C_ORO, 2, true)
+	var titulo := titulo_cartas()
+	var col_titulo: Color = UI.C_ORO
+	if subida_flash > 0 and (subida_flash / 4) % 2 == 0:
+		col_titulo = Color.WHITE
+	UI.tc(c, PX + ANCHO / 2.0, 18, titulo, col_titulo, 2 if UI.ancho(titulo, 2) <= ANCHO - 8 else 1, true)
 	UI.tc(c, PX + ANCHO / 2.0, 46, "Armas %d/%d  ·  Habilidades %d/%d" % [arsenal.armas.size(), Partida.max_armas(), habs.size(), Partida.max_habs()], UI.C_GRIS)
 	for i in cartas.size():
 		_dibujar_carta(c, i)

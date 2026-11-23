@@ -499,6 +499,13 @@ func _aplicar_premio(p: Dictionary, nivel: String) -> Dictionary:
 	return p
 
 
+## La meta de cadena de la 3.ª estrella de un nivel, ajustada a la dificultad (#62), en múltiplos de 5.
+## La usan todos los que la muestran o la revisan: HUD, pausa, resultado y panel del nivel.
+func meta_cadena(id: String) -> int:
+	var base := float(Datos.NIVELES[id].get("cadena", 0))
+	return int(roundf(base * float(dif().get("cadena", 1.0)) / 5.0)) * 5
+
+
 ## Aplica el resultado de un nivel ganado. Devuelve lo que hay que celebrar.
 func completar_nivel(id: String, res: Dictionary) -> Dictionary:
 	var def: Dictionary = Datos.NIVELES[id]
@@ -506,7 +513,7 @@ func completar_nivel(id: String, res: Dictionary) -> Dictionary:
 	var est := 1
 	if res.golpes <= def.golpes:
 		est += 1
-	if res.max_cadena >= def.cadena:
+	if res.max_cadena >= meta_cadena(id):
 		est += 1
 	var antes := estrellas(id)
 	d.niveles[id] = {"completado": true, "estrellas": maxi(est, antes)}
@@ -1008,14 +1015,16 @@ func _sumar(s: Dictionary, mods: Dictionary, factor := 1.0) -> void:
 		s[k] = s.get(k, 0) + mods[k] * factor
 
 
-## Cuánto sube cada nivel de mejora, sobre la base de la pieza. Con 4 % la Mira subía 0,08 de ataque
-## por nivel y varios niveles no cambiaban ningún número visible (M13); con 8 % todos cambian.
-const MEJORA_POR_NIVEL := 0.08
+## Cuánto sube cada nivel de mejora, sobre la base de la pieza, en la dificultad de esta partida (#61).
+## Los números están en CatalogoProgreso.MEJORA_POR_NIVEL; la ficha y "Al mejorar" salen de stats_item.
+func mejora_por_nivel() -> float:
+	var t: Dictionary = CatalogoProgreso.MEJORA_POR_NIVEL
+	return t.get(d.dificultad, t.dificil)
 
 
 func stats_item(it: Dictionary) -> Dictionary:
 	var r := {}
-	var f: float = Datos.RAREZAS[it.rareza].mult * (1.0 + MEJORA_POR_NIVEL * (it.nivel - 1))
+	var f: float = Datos.RAREZAS[it.rareza].mult * (1.0 + mejora_por_nivel() * (it.nivel - 1))
 	_sumar(r, def_de(it).base, f)
 	return r
 

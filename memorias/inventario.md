@@ -112,7 +112,8 @@ Unidades: `cad`, `dur` y similares van en cuadros (60 por segundo). `dmg` se mul
 
 ## Piezas
 
-Cada pieza da su base por rareza (× multiplicador) y suma un 8 % de esa base por nivel de mejora. Las pasivas se abren
+Cada pieza da su base por rareza (× multiplicador) y suma un porcentaje de esa base por nivel de mejora, según la
+dificultad de la partida: Fácil 12 %, Normal 10 %, Difícil 8 %, Extremo 8 %. Las pasivas se abren
 según la rareza (`r`: 2 Poco común, 3 Raro, 4 Épico, 5 Legendario).
 
 | id | Ranura | Nombre | Qué hace | Base | Pasivas | Mundo | Empieza a caer |
@@ -166,7 +167,7 @@ según la rareza (`r`: 2 Poco común, 3 Raro, 4 Épico, 5 Legendario).
 
 ## Niveles
 
-| id | Nombre | Duración | Estrella 2 (golpes máx.) | Estrella 3 (cadena) | Enemigos | Jefe | Premio |
+| id | Nombre | Duración | Estrella 2 (golpes máx.) | Estrella 3 (cadena en Normal) | Enemigos | Jefe | Premio |
 |---|---|---|---|---|---|---|---|
 | `1-1` | Despertar en el basural | 100 s | 2 | 30 | bot |  | HANGAR |
 | `1-2` | Algo se mueve | 130 s | 3 | 60 | bot, rabioso, mosca |  | DESYNC |
@@ -185,14 +186,15 @@ Multiplicadores sobre Normal: `hp` y `dano` de los enemigos, `vel` de sus balas,
 (menos es más seguido), `botin` y `chatarra`.
 Presión: `ritmo` multiplica los enemigos por segundo del director, `inicio` sube además el comienzo,
 `ganas` es cuánto disparan los Bots al empezar el nivel, `salva` = tiempo entre salvas y `jefe cd` = tiempo
-entre ataques de los jefes (menos es más seguido).
+entre ataques de los jefes (menos es más seguido). `cadena` multiplica la meta de cadena de la 3.ª estrella
+(se redondea a múltiplos de 5).
 
-| id | Nombre | hp | daño | vel | disparo | botín | chatarra | ritmo | inicio | ganas | salva | jefe cd | Notas |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `facil` | Fácil | 0,8 | 0,7 | 0,9 | 1,25 | 0,85 | 1 | 1 | 1 | 0,35 | 1 | 1 |  |
-| `normal` | Normal | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 0,35 | 1 | 1 |  |
-| `dificil` | Difícil | 1,15 | 1,2 | 1,1 | 0,9 | 1,2 | 1,2 | 1,4 | 1,3 | 0,7 | 0,75 | 0,85 |  |
-| `extremo` | Extremo | 1,45 | 1,5 | 1,2 | 0,8 | 1,5 | 1,5 | 1,6 | 1,4 | 0,85 | 0,65 | 0,75 | sin pizzas, requiere terminar |
+| id | Nombre | hp | daño | vel | disparo | botín | chatarra | ritmo | inicio | ganas | salva | jefe cd | cadena | Notas |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `facil` | Fácil | 0,8 | 0,7 | 0,9 | 1,25 | 0,85 | 1 | 1 | 1 | 0,35 | 1 | 1 | 1 |  |
+| `normal` | Normal | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 0,35 | 1 | 1 | 1 |  |
+| `dificil` | Difícil | 1,15 | 1,2 | 1,1 | 0,9 | 1,2 | 1,2 | 1,4 | 1,3 | 0,7 | 0,75 | 0,85 | 1,5 |  |
+| `extremo` | Extremo | 1,45 | 1,5 | 1,2 | 0,8 | 1,5 | 1,5 | 1,6 | 1,4 | 0,85 | 0,65 | 0,75 | 1,5 | sin pizzas, requiere terminar |
 
 ## Desafíos
 

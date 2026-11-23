@@ -149,12 +149,24 @@ func _preparar_combate(c) -> void:
 				Partida._sumar(c.stats, h.mods)
 			if h.get("especial", "") == "escudo":
 				c.escudo = true
+	# --cartas[=N]: N subidas en cola (1 si no dice). --elegidas=K: abre las cartas y elige K, para ver
+	# la tanda K+1 con su "¡OTRA SUBIDA!" (#64)
 	if args.has("cartas"):
-		c.niveles_pendientes = 1
+		c.niveles_pendientes = maxi(1, int(args.cartas))
+		if args.has("elegidas"):
+			c._abrir_cartas()
+			for k in int(args.elegidas):
+				c.elegir_carta(0)
 	if args.has("barra"):
 		c.barra = float(args.barra)
 	if args.has("ruleta"):
 		c.ruleta_forzada = Array(args.ruleta.split(","))
+	# --hitbox=tenue|cercana|foco: cómo se ve la hitbox jugando normal (#58)
+	if args.has("hitbox"):
+		if args.hitbox in c.ESTILOS_HITBOX:
+			c.estilo_hitbox = args.hitbox
+		else:
+			push_error("--hitbox=%s no existe; usa %s" % [args.hitbox, ", ".join(c.ESTILOS_HITBOX)])
 	# --pausa: abre el menú de pausa al partir, para capturarlo
 	if args.has("pausa"):
 		c.abrir_pausa.call_deferred()

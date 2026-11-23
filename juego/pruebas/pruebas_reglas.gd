@@ -16,9 +16,61 @@ func _tests() -> void:
 	_tests_armas()
 	_tests_hangar_delante()
 	_tests_hitbox_indicador()
+	_tests_consejo_derrota()
+	_tests_barra_mascota()
 	_tests_pruebas_aisladas()
+	_tests_hitbox_estilos()
+	_tests_meta_cadena_dificultad()
+	_tests_mejora_por_dificultad()
+	_tests_desafios_antes_del_arsenal()
+	_tests_otra_subida()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
+
+
+## #62: la meta de cadena de la 3.ª estrella depende de la dificultad. En Difícil hay más enemigos y la cadena
+## crece sola, así que la meta sube; en Normal queda la del catálogo. La estrella se gana con la meta ajustada.
+func _tests_meta_cadena_dificultad() -> void:
+	Partida.nuevo("normal")
+	for id in Datos.ORDEN_NIVELES:
+		_ok(Partida.meta_cadena(id) == int(Datos.NIVELES[id].cadena), "en Normal la meta de cadena de %s es la del catálogo" % id)
+	var normal := {}
+	for id in Datos.ORDEN_NIVELES:
+		normal[id] = Partida.meta_cadena(id)
+	var orden := ["facil", "normal", "dificil", "extremo"]
+	for i in orden.size():
+		_ok(Datos.DIFICULTADES[orden[i]].has("cadena"), "la dificultad %s define su meta de cadena" % orden[i])
+		if i > 0:
+			_ok(float(Datos.DIFICULTADES[orden[i]].cadena) >= float(Datos.DIFICULTADES[orden[i - 1]].cadena), "la meta de cadena de %s pide al menos lo de %s" % [orden[i], orden[i - 1]])
+	Partida.nuevo("dificil")
+	for id in Datos.ORDEN_NIVELES:
+		var m: int = Partida.meta_cadena(id)
+		_ok(m > normal[id] and m % 5 == 0, "en Difícil la meta de cadena de %s sube y es redonda: %d (Normal %d)" % [id, m, normal[id]])
+	_ok(Partida.meta_cadena("1-8") == 195 and Partida.meta_cadena("1-1") == 45, "en Difícil, 1-8 pide 195 y 1-1 pide 45")
+	# la estrella: con la meta de Normal no alcanza en Difícil; con la ajustada, sí
+	var r1 := Partida.completar_nivel("1-1", {"golpes": 0, "max_cadena": normal["1-1"]})
+	_ok(r1.estrellas == 2, "en Difícil la cadena de Normal ya no da la 3.ª estrella")
+	var r2 := Partida.completar_nivel("1-1", {"golpes": 0, "max_cadena": Partida.meta_cadena("1-1")})
+	_ok(r2.estrellas == 3, "en Difícil la cadena ajustada da la 3.ª estrella")
+	# la pausa muestra y revisa la meta ajustada
+	Partida.nivel_sel = "1-5"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	var p = load("res://pantallas/pausa.gd").new()
+	p.combate = c
+	var meta: int = Partida.meta_cadena("1-5")
+	c.max_cadena = normal["1-5"]
+	var est: Array = p.estrellas()
+	_ok(("Cadena de %d " % meta) in str(est[3].txt) and not est[3].ok, "la pausa muestra la meta de Difícil y no la da por lograda con la de Normal")
+	c.max_cadena = meta
+	_ok(p.estrellas()[3].ok, "la pausa la da por lograda con la meta ajustada")
+	p.free()
+	c.queue_free()
+	Partida.nuevo("normal")
+	var r3 := Partida.completar_nivel("1-1", {"golpes": 0, "max_cadena": normal["1-1"]})
+	_ok(r3.estrellas == 3, "en Normal la meta del catálogo da la 3.ª estrella")
+	Partida.nuevo()
 
 
 ## #47: cada prueba tiene sus propias opciones y teclas, y --reiniciar las deja de fábrica.
@@ -41,6 +93,56 @@ func _tests_pruebas_aisladas() -> void:
 	_ok(Controles.a.obtener("esquivar", "teclado", 1) == "key:L", "#47: --reiniciar deja las teclas de fábrica")
 	Ajustes.musica = musica
 	Ajustes.disparo_auto = auto
+
+
+## #65: el consejo "anda al Hangar" solo sale al perder de verdad y si ya hay Hangar.
+func _tests_consejo_derrota() -> void:
+	var tenia: bool = Partida.tiene("hangar")
+	var r = load("res://pantallas/resultado.gd").new()
+	r.res = {"ganado": false}
+	r.modo = "normal"
+	Partida.d.desbloqueos.erase("hangar")
+	_ok(r.perdio() and not r.aconsejar_hangar(), "#65: sin Hangar (antes de ganar el 1-1) no se aconseja ir al Hangar")
+	Partida.desbloquear("hangar")
+	_ok(r.aconsejar_hangar(), "#65: con Hangar, al perder se aconseja ir al Hangar")
+	r.abandono = true
+	_ok(not r.aconsejar_hangar(), "#65: retirarse no es perder: sin consejo")
+	r.abandono = false
+	r.modo = "infinito"
+	_ok(not r.aconsejar_hangar(), "#65: en el Modo Infinito siempre se termina cayendo: sin consejo")
+	r.free()
+	if not tenia:
+		Partida.d.desbloqueos.erase("hangar")
+
+
+## #67: una mascota lista y sin a quién atacar mantiene la barra llena; cuando aparece algo, actúa y la vacía.
+func _tests_barra_mascota() -> void:
+	var antes: String = Partida.d.mascota
+	Partida.dar_mascota("mordisco")
+	Partida.d.mascota = "mordisco"
+	var c = _combate_prueba("pistola", 1, false)
+	_ok(c.tiene_mascota and c.pet_ia == "come", "#67: el combate de prueba trae a Mordisco")
+	var recarga: float = Partida.pet_recarga()
+	var lleno_desde := -1
+	var minimo_despues := 1.0
+	for i in int(recarga) + 120:
+		c._tick_mascota()
+		var listo: float = 1.0 - clampf(c.pet_cd / recarga, 0.0, 1.0)
+		if lleno_desde < 0 and listo >= 1.0:
+			lleno_desde = i
+		elif lleno_desde >= 0:
+			minimo_despues = minf(minimo_despues, listo)
+	_ok(lleno_desde >= 0, "#67: sin balas cerca, la barra de Mordisco se llena")
+	_ok(minimo_despues >= 1.0, "#67: y se queda llena mientras no hay balas (mínimo %.3f)" % minimo_despues)
+	# aparece una bala al lado: se la come en cuanto vuelve a buscar, y la barra parte de cero
+	var nams: int = c.nams
+	_bala_prueba(c, c.px + 4.0, c.py)
+	for i in 30:
+		c._tick_mascota()
+	_ok(c.nams == nams + 1 and c.bn == 0, "#67: con una bala cerca, Mordisco se la come")
+	_ok(c.pet_cd > recarga - 31.0, "#67: después de comer, la barra vuelve a cargarse desde cero")
+	c.queue_free()
+	Partida.d.mascota = antes
 
 
 ## M02: lo del fondo que va delante de una estación es un recorte exacto del fondo, en su lugar, y tapa a alguna estación.
@@ -710,7 +812,10 @@ func _tests_mejoras_visibles() -> void:
 			_ok(HE.texto_mejora(it) == "", "al máximo no ofrece mejora: " + id)
 	var turbo := {"id": "motor_turbo", "rareza": 0, "nivel": 1, "uid": -1}
 	_ok(HE.texto_mejora(turbo).begins_with("Al mejorar: -"), "la recarga de esquiva baja al mejorar: " + HE.texto_mejora(turbo))
-	# M13 (balance): con la mejora por nivel actual, cada nivel de cada pieza cambia un número de la ficha
+	# M13 (balance): con la mejora por nivel actual, cada nivel de cada pieza cambia un número de la ficha.
+	# Se mide en Difícil, donde la mejora es la más chica (8 %, #61).
+	var dif_antes: String = Partida.d.dificultad
+	Partida.d.dificultad = "dificil"
 	for id in Datos.ITEMS:
 		for rareza in [0, 3]:
 			var it2 := {"id": id, "rareza": rareza, "nivel": 1, "uid": -1}
@@ -721,6 +826,7 @@ func _tests_mejoras_visibles() -> void:
 				if antes == _textos_stats(Partida.stats_item(it2)):
 					sin_cambio += 1
 			_ok(sin_cambio == 0, "cada mejora de %s (rareza %d) cambia un número visible (%d sin cambio)" % [id, rareza, sin_cambio])
+	Partida.d.dificultad = dif_antes
 	_ok(PiezaBoton.valor_stat("atk", 2.16) == "+2,2", "un decimal con coma: " + PiezaBoton.valor_stat("atk", 2.16))
 	_ok(PiezaBoton.valor_stat("atk", 3.0) == "+3", "sin ,0 que no aporta")
 	_ok(PiezaBoton.valor_stat("crit", 0.045) == "+4,5 %", "porcentaje con decimal: " + PiezaBoton.valor_stat("crit", 0.045))
@@ -731,6 +837,47 @@ func _textos_stats(st: Dictionary) -> String:
 	for k in st:
 		r += k + PiezaBoton.valor_stat(k, st[k]) + ";"
 	return r
+
+
+## #61: mejorar una pieza sube más en Fácil (12 %) que en Normal (10 %) y que en Difícil (8 %), y la ficha lo muestra.
+## Sale de la dificultad de la partida, así que también vale para las piezas que ya tenías.
+func _tests_mejora_por_dificultad() -> void:
+	var HE = load("res://pantallas/hangar_equipo.gd")
+	var dif_antes: String = Partida.d.dificultad
+	var pct := {"facil": 0.12, "normal": 0.10, "dificil": 0.08, "extremo": 0.08}
+	for di in pct:
+		Partida.d.dificultad = di
+		_ok(is_equal_approx(Partida.mejora_por_nivel(), pct[di]), "la mejora por nivel en %s es %d %%" % [di, roundi(pct[di] * 100)])
+	for id in Datos.ITEMS:
+		for rareza in [0, 3]:
+			var it := {"id": id, "rareza": rareza, "nivel": 5, "uid": -1}
+			var st := {}
+			for di in pct:
+				Partida.d.dificultad = di
+				st[di] = Partida.stats_item(it)
+			for k in Datos.ITEMS[id].base:
+				var base: float = Datos.ITEMS[id].base[k] * Datos.RAREZAS[rareza].mult
+				var exactos := true
+				for di in pct:
+					exactos = exactos and is_equal_approx(st[di][k], base * (1.0 + pct[di] * 4))
+				_ok(exactos, "%s (rareza %d) al nivel 5 suma el porcentaje de cada dificultad en %s" % [id, rareza, k])
+				_ok(absf(st.facil[k]) > absf(st.normal[k]) and absf(st.normal[k]) > absf(st.dificil[k]),
+					"%s (rareza %d) da más %s en Fácil que en Normal, y en Normal que en Difícil" % [id, rareza, k])
+	# "Al mejorar": la Munición Perforante épica tiene 5 de ataque de base, así que sube 0,6, 0,5 o 0,4
+	var nom: String = PiezaBoton.sin_spoiler(Datos.NOMBRE_STAT.atk)
+	var perf := {"id": "mun_perforante", "rareza": 3, "nivel": 1, "uid": -1}
+	var esperado := {"facil": "+0,6", "normal": "+0,5", "dificil": "+0,4"}
+	for di in esperado:
+		Partida.d.dificultad = di
+		var txt: String = HE.texto_mejora(perf)
+		_ok(txt == "Al mejorar: %s %s" % [esperado[di], nom], "Al mejorar en %s muestra %s: %s" % [di, esperado[di], txt])
+	# retroactivo: la misma pieza, ya mejorada, cambia si cambia la dificultad de la partida
+	var perf5 := {"id": "mun_perforante", "rareza": 0, "nivel": 6, "uid": -1}
+	Partida.d.dificultad = "facil"
+	var en_facil: float = Partida.stats_item(perf5).atk
+	Partida.d.dificultad = "dificil"
+	_ok(is_equal_approx(en_facil, 2.5 * 1.6) and is_equal_approx(Partida.stats_item(perf5).atk, 2.5 * 1.4), "la misma pieza al nivel 6 da 4 en Fácil y 3,5 en Difícil")
+	Partida.d.dificultad = dif_antes
 
 
 ## M16 y M17: la pausa muestra lo equipado y las estrellas, y todo cabe en su columna.
@@ -991,3 +1138,227 @@ func _tests_hitbox_indicador() -> void:
 	c.stats.hitbox_mult = 0.0
 	_ok(c.centro_hitbox_discreta() <= c.hitbox() - 0.5, "con la hitbox mínima el aro se sigue viendo (%.2f / %.2f)" % [c.centro_hitbox_discreta(), c.hitbox()])
 	c.queue_free()
+
+
+## #58: los tres estilos de la hitbox jugando normal. Se prueban las funciones que deciden, no los píxeles.
+func _tests_hitbox_estilos() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.estado = "jugando"
+	c.foco = false
+	_ok(c.ESTILO_HITBOX in c.ESTILOS_HITBOX and c.estilo_hitbox == c.ESTILO_HITBOX, "#58: el estilo por defecto es uno de los tres")
+	_ok(c.ESTILO_HITBOX == "cercana", "#58: por defecto, el aro aparece solo con balas cerca (propuesta)")
+	c.jx = 200.0
+	c.jy = 300.0
+	c.bn = 0
+	# tenue: el aro siempre, al 35 %, con el centro
+	c.estilo_hitbox = "tenue"
+	c._tick_aro_hitbox()
+	_ok(is_equal_approx(c.alfa_aro_hitbox(), 0.35), "#58 tenue: el aro se ve siempre al 35 %% (%.2f)" % c.alfa_aro_hitbox())
+	_ok(c.centro_hitbox_visible(), "#58 tenue: se ve el centro blanco")
+	# cercana: sin balas cerca no hay aro; con una bala a menos de DIST_ARO_CERCA, sí
+	c.estilo_hitbox = "cercana"
+	c.aro_hitbox = 0.0
+	for k in 60:
+		c._tick_aro_hitbox()
+	_ok(c.alfa_aro_hitbox() == 0.0, "#58 cercana: sin balas no hay aro")
+	_ok(c.centro_hitbox_visible(), "#58 cercana: el centro blanco se ve siempre")
+	c._bala(c.jx + c.DIST_ARO_CERCA + 10.0, c.jy, 0.0, 0.0, 0, 0, 0, true)
+	for k in 60:
+		c._tick_aro_hitbox()
+	_ok(not c.bala_cerca_de_hitbox() and c.alfa_aro_hitbox() == 0.0, "#58 cercana: una bala lejos no enciende el aro")
+	c._bala(c.jx + 20.0, c.jy - 15.0, 0.0, 0.0, 0, 0, 0, true)
+	_ok(c.bala_cerca_de_hitbox(), "#58 cercana: una bala a 25 px cuenta como cerca")
+	c._tick_aro_hitbox()
+	var tras_uno: float = c.alfa_aro_hitbox()
+	_ok(tras_uno > 0.0 and tras_uno < c.ALFA_ARO_CERCA, "#58 cercana: el aro aparece de a poco, no de golpe (%.2f)" % tras_uno)
+	for k in 10:
+		c._tick_aro_hitbox()
+	_ok(is_equal_approx(c.alfa_aro_hitbox(), c.ALFA_ARO_CERCA), "#58 cercana: con la bala cerca el aro llega al 70 %")
+	c.quitar_bala(1)
+	c._tick_aro_hitbox()
+	_ok(c.alfa_aro_hitbox() > 0.5, "#58 cercana: al alejarse la bala el aro no se apaga de golpe")
+	for k in 30:
+		c._tick_aro_hitbox()
+	_ok(c.alfa_aro_hitbox() == 0.0, "#58 cercana: y en menos de un segundo se apaga")
+	# foco: jugando normal no se ve nada; en foco o Desync se ve entero
+	c.estilo_hitbox = "foco"
+	c._bala(c.jx + 5.0, c.jy, 0.0, 0.0, 0, 0, 0, true)
+	c._tick_aro_hitbox()
+	_ok(c.alfa_aro_hitbox() == 0.0 and not c.centro_hitbox_visible(), "#58 foco: jugando normal no se ve ni el aro ni el centro, aunque haya balas")
+	c.foco = true
+	_ok(c.hitbox_destacada(), "#58 foco: con el foco se ve entera")
+	c.foco = false
+	c.estado = "desync"
+	_ok(c.hitbox_destacada(), "#58 foco: en Desync se ve entera")
+	c.estado = "jugando"
+	_ok(is_equal_approx(c.hitbox(), 3.5), "#58: ningún estilo cambia la hitbox real")
+	# la pista del 1-1 que explica el punto sale solo con el estilo "foco", y en orden
+	var con_foco: Array = c.pistas_nivel()
+	_ok(con_foco.has(c.PISTA_HITBOX_FOCO) and con_foco.size() == c.nivel.pistas.size() + 1, "#58 foco: el 1-1 suma la pista del punto")
+	var en_orden := true
+	for i in range(1, con_foco.size()):
+		en_orden = en_orden and con_foco[i - 1][0] <= con_foco[i][0]
+	_ok(en_orden, "#58 foco: las pistas del 1-1 siguen en orden de tiempo")
+	_ok(not c.nivel.pistas.has(c.PISTA_HITBOX_FOCO), "#58 foco: la pista no se pega al catálogo")
+	_ok(Datos.con_teclas(c.PISTA_HITBOX_FOCO[1]).find("{") < 0, "#58 foco: la pista lleva la tecla real")
+	for est in ["tenue", "cercana"]:
+		c.estilo_hitbox = est
+		_ok(c.pistas_nivel() == c.nivel.pistas, "#58 %s: el 1-1 queda con sus pistas de siempre" % est)
+	c.queue_free()
+	Partida.nuevo()
+	Partida.nivel_sel = "1-2"
+	var c2 = load("res://combate/combate.gd").new()
+	add_child(c2)
+	c2.set_physics_process(false)
+	c2.estilo_hitbox = "foco"
+	_ok(c2.pistas_nivel() == c2.nivel.pistas, "#58 foco: la pista del punto es solo del 1-1")
+	c2.queue_free()
+	Partida.nuevo()
+
+
+## #66: al perder en el 1-3 se cumplen desafíos (snipers, roces, chatarra...) que dan armas y habilidades,
+## pero el Arsenal, el único lugar donde se ven, abre recién con el 1-4. La pantalla de premio lo dice.
+func _tests_desafios_antes_del_arsenal() -> void:
+	var PR = load("res://pantallas/premio.gd")
+	Partida.nuevo("dificil")
+	_marcar_vistos()
+	for n in ["1-1", "1-2"]:
+		var g := _res_demo("ganado")
+		g.nivel_id = n
+		Partida.registrar(g)
+		Partida.completar_nivel(n, g)
+	Partida.revisar_desafios()
+	var r := _res_demo("derrota")
+	r.nivel_id = "1-3"
+	r.kills_tipo = {"bot": 60, "sniper": 15}
+	var armas_antes: int = Partida.d.armas.size()
+	Partida.registrar(r)
+	Partida.generar_botin(r)
+	var nuevas: Array = Partida.revisar_desafios()
+	_ok(not Partida.tiene("tablon"), "#66: en el 1-3 el Arsenal sigue cerrado")
+	_ok(Partida.d.armas.size() > armas_antes and "railgun" in Partida.d.armas, "#66: perder en el 1-3 puede dar armas (15 Snipers: Railgun)")
+	var revisados := 0
+	for p in nuevas:
+		if not p.tipo in ["arma", "hab", "ranura_arma", "ranura_hab"]:
+			continue
+		var pr = PR.new()
+		pr.premio = p
+		var txt: String = pr.donde_se_ve() if pr.has_method("donde_se_ve") else ""
+		_ok(txt.contains("ARSENAL") and txt.contains("1-4"), "#66: el premio %s dice que se verá en el Arsenal del 1-4" % p.nombre)
+		var cuerpo := UI.partir(p.get("detalle", p.get("desc", "")), 480.0)
+		var donde := UI.partir(txt, 480.0)
+		var ancho := 0.0
+		for lin in donde:
+			ancho = maxf(ancho, UI.ancho(lin))
+		_ok(ancho <= 480.0 and 240.0 + cuerpo.size() * 14 + 8 + donde.size() * 14 <= 326.0, "#66: el aviso de %s cabe sobre el \"continuar\"" % p.nombre)
+		pr.free()
+		revisados += 1
+	_ok(revisados > 0, "#66: la derrota del 1-3 dio premios que solo se ven en el Arsenal")
+	# con el Arsenal abierto, o si no viene de un desafío, no se dice nada
+	if not nuevas.is_empty():
+		var pr = PR.new()
+		pr.premio = nuevas[0]
+		Partida.desbloquear("tablon")
+		_ok(pr.has_method("donde_se_ve") and pr.donde_se_ve() == "", "#66: con el Arsenal abierto no hace falta el aviso")
+		pr.free()
+	var pn = PR.new()
+	pn.premio = Datos.NIVELES["1-5"].premio.duplicate()
+	Partida.d.desbloqueos.erase("tablon")
+	_ok(pn.has_method("donde_se_ve") and pn.donde_se_ve() == "", "#66: un premio de nivel no lleva el aviso del Arsenal")
+	pn.free()
+	Partida.nuevo()
+
+
+## #64: al elegir una carta con otra subida en cola salen cartas nuevas al tiro. El título lo dice
+## ("¡OTRA SUBIDA! (2 de 3)") para que no parezca un cambio de cartas. Y el clic izquierdo elige: no cambia.
+func _tests_otra_subida() -> void:
+	Partida.nuevo()
+	Partida.nivel_sel = "1-1"
+	var c = load("res://combate/combate.gd").new()
+	add_child(c)
+	c.set_physics_process(false)
+	c.jx = 200.0
+	c.jy = 300.0
+	var destello: int = c.get_script().get_script_constant_map().get("DESTELLO_SUBIDA", 24)
+	# una sola subida: el título de siempre
+	c.estado = "jugando"
+	c.niveles_pendientes = 1
+	c._revisar_cartas()
+	_ok(c.estado == "cartas" and _titulo_cartas(c) == "¡SUBISTE DE NIVEL!", "con una subida, el título de siempre (%s)" % _titulo_cartas(c))
+	c.elegir_carta(0)
+	_ok(c.estado == "jugando", "con una subida, al elegir se vuelve a jugar")
+	# tres subidas en cola, como tras un Desync
+	c.cambios_restantes = 1
+	c.niveles_pendientes = 3
+	c._revisar_cartas()
+	_ok(_titulo_cartas(c) == "¡SUBISTE DE NIVEL! (1 de 3)", "la primera tanda avisa cuántas vienen (%s)" % _titulo_cartas(c))
+	_ok(c.get("subida_flash") == 0, "la primera tanda no destella el título")
+	c.elegir_carta(0)
+	_ok(c.estado == "cartas", "con otra subida en cola, al elegir salen cartas nuevas")
+	_ok(_titulo_cartas(c) == "¡OTRA SUBIDA! (2 de 3)", "la tanda nueva dice que es otra subida (%s)" % _titulo_cartas(c))
+	_ok(c.get("subida_flash") == destello, "y el título destella")
+	_ok(c.cambios_restantes == 1, "elegir no gasta cambios de cartas")
+	_ok(c.carta_t == 0, "la tanda nueva espera antes de aceptar otro clic")
+	for k in destello:
+		c._tick_cartas()
+	_ok(c.get("subida_flash") == 0, "el destello dura lo suyo y se apaga")
+	# cambiar cartas no es otra subida
+	c.cambiar_cartas()
+	_ok(c.cambios_restantes == 0 and _titulo_cartas(c) == "¡OTRA SUBIDA! (2 de 3)", "cambiar cartas no cuenta como otra subida")
+	_ok(c.get("subida_flash") == 0, "cambiar cartas no destella el título")
+	c.elegir_carta(0)
+	_ok(_titulo_cartas(c) == "¡OTRA SUBIDA! (3 de 3)", "la tercera tanda también avisa (%s)" % _titulo_cartas(c))
+	c.elegir_carta(0)
+	_ok(c.estado == "jugando", "después de la última, se vuelve a jugar")
+	# la subida siguiente empieza de nuevo
+	c.niveles_pendientes = 1
+	c._revisar_cartas()
+	_ok(_titulo_cartas(c) == "¡SUBISTE DE NIVEL!", "una subida suelta después vuelve al título de siempre (%s)" % _titulo_cartas(c))
+	c.elegir_carta(0)
+	for s in ["¡SUBISTE DE NIVEL! (1 de 9)", "¡OTRA SUBIDA! (9 de 9)"]:
+		_ok(UI.ancho(s, 2) <= c.ANCHO - 8, "el título grande cabe: %s (%.0f px)" % [s, UI.ancho(s, 2)])
+	# el clic izquierdo de verdad sobre una carta la elige y no gasta cambios (hipótesis 2 del #64)
+	var izq := InputEventMouseButton.new()
+	izq.button_index = MOUSE_BUTTON_LEFT
+	izq.pressed = true
+	var der := InputEventMouseButton.new()
+	der.button_index = MOUSE_BUTTON_RIGHT
+	der.pressed = true
+	_ok(not InputMap.event_is_action(izq, "desync"), "de fábrica, el clic izquierdo no es Desync")
+	_ok(InputMap.event_is_action(der, "desync"), "de fábrica, el clic derecho sí es Desync")
+	c.cambios_restantes = 1
+	c.niveles_pendientes = 2
+	c._revisar_cartas()
+	c.carta_t = 18
+	_clic_ya(c._rect_carta(2).get_center(), MOUSE_BUTTON_LEFT, true)
+	_ok(c.carta_t == 0, "el clic llegó a la carta: salió otra tanda")
+	_ok(c.cambios_restantes == 1, "el clic izquierdo no gasta cambios")
+	_ok(_titulo_cartas(c) == "¡OTRA SUBIDA! (2 de 2)", "el clic izquierdo eligió la carta y salió la otra subida (%s)" % _titulo_cartas(c))
+	# con el botón todavía apretado, el cuadro de las cartas tampoco lo toma como Desync
+	c.carta_t = 18
+	c._tick_cartas()
+	_ok(c.cambios_restantes == 1, "el cuadro siguiente tampoco cambia las cartas")
+	_clic_ya(c._rect_carta(2).get_center(), MOUSE_BUTTON_LEFT, false)
+	c.queue_free()
+
+
+## El título de la pantalla de cartas. Sin titulo_cartas() (antes del #64) era siempre el mismo.
+func _titulo_cartas(c) -> String:
+	return c.titulo_cartas() if c.has_method("titulo_cartas") else "¡SUBISTE DE NIVEL!"
+
+
+## Un clic del mouse que llega al tiro a los _input, sin esperar cuadros (para tests sin ventana).
+func _clic_ya(pos: Vector2, boton: MouseButton, apretado: bool) -> void:
+	var ev := InputEventMouseButton.new()
+	ev.position = _raton(pos)
+	ev.global_position = ev.position
+	ev.button_index = boton
+	ev.pressed = apretado
+	if apretado:
+		ev.button_mask = MOUSE_BUTTON_MASK_LEFT if boton == MOUSE_BUTTON_LEFT else MOUSE_BUTTON_MASK_RIGHT
+	Input.parse_input_event(ev)
+	Input.flush_buffered_events()
