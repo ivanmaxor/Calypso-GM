@@ -13,6 +13,7 @@ extends "res://pruebas/pruebas_hangar.gd"
 ##   --armas=a,b  --habs=a,b  --evo               parte el combate con eso puesto
 ##   --bot  --torpe                               juega solo, bien o mal
 ##   --foco                                       el bot juega con el foco apretado (para mirar la hitbox en capturas)
+##   --hitbox=tenue|cercana|foco                  cómo se ve la hitbox jugando normal (#58; sin esto, ESTILO_HITBOX)
 ##   --quieto                                     bot que no se mueve ni esquiva nunca
 ##   --ciego                                      bot que persigue enemigos y elige bien las cartas, pero jamás esquiva
 ##   --generar=1-8                                arma con Partida.generar_para la partida de quien viene llegando a ese nivel

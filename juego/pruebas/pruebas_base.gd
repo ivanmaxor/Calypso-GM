@@ -155,6 +155,12 @@ func _preparar_combate(c) -> void:
 		c.barra = float(args.barra)
 	if args.has("ruleta"):
 		c.ruleta_forzada = Array(args.ruleta.split(","))
+	# --hitbox=tenue|cercana|foco: cómo se ve la hitbox jugando normal (#58)
+	if args.has("hitbox"):
+		if args.hitbox in c.ESTILOS_HITBOX:
+			c.estilo_hitbox = args.hitbox
+		else:
+			push_error("--hitbox=%s no existe; usa %s" % [args.hitbox, ", ".join(c.ESTILOS_HITBOX)])
 	# --pausa: abre el menú de pausa al partir, para capturarlo
 	if args.has("pausa"):
 		c.abrir_pausa.call_deferred()
