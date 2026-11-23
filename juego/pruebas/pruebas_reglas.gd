@@ -19,6 +19,7 @@ func _tests() -> void:
 	_tests_consejo_derrota()
 	_tests_barra_mascota()
 	_tests_pruebas_aisladas()
+	_tests_desafios_antes_del_arsenal()
 	_tests_otra_subida()
 	load("res://pruebas/prueba_audio.gd").correr(_ok)
 	print("[tests] pasadas=%d fallos=%d" % [pasadas, fallos])
@@ -1044,6 +1045,59 @@ func _tests_hitbox_indicador() -> void:
 	c.stats.hitbox_mult = 0.0
 	_ok(c.centro_hitbox_discreta() <= c.hitbox() - 0.5, "con la hitbox mínima el aro se sigue viendo (%.2f / %.2f)" % [c.centro_hitbox_discreta(), c.hitbox()])
 	c.queue_free()
+
+
+## #66: al perder en el 1-3 se cumplen desafíos (snipers, roces, chatarra...) que dan armas y habilidades,
+## pero el Arsenal, el único lugar donde se ven, abre recién con el 1-4. La pantalla de premio lo dice.
+func _tests_desafios_antes_del_arsenal() -> void:
+	var PR = load("res://pantallas/premio.gd")
+	Partida.nuevo("dificil")
+	_marcar_vistos()
+	for n in ["1-1", "1-2"]:
+		var g := _res_demo("ganado")
+		g.nivel_id = n
+		Partida.registrar(g)
+		Partida.completar_nivel(n, g)
+	Partida.revisar_desafios()
+	var r := _res_demo("derrota")
+	r.nivel_id = "1-3"
+	r.kills_tipo = {"bot": 60, "sniper": 15}
+	var armas_antes: int = Partida.d.armas.size()
+	Partida.registrar(r)
+	Partida.generar_botin(r)
+	var nuevas: Array = Partida.revisar_desafios()
+	_ok(not Partida.tiene("tablon"), "#66: en el 1-3 el Arsenal sigue cerrado")
+	_ok(Partida.d.armas.size() > armas_antes and "railgun" in Partida.d.armas, "#66: perder en el 1-3 puede dar armas (15 Snipers: Railgun)")
+	var revisados := 0
+	for p in nuevas:
+		if not p.tipo in ["arma", "hab", "ranura_arma", "ranura_hab"]:
+			continue
+		var pr = PR.new()
+		pr.premio = p
+		var txt: String = pr.donde_se_ve() if pr.has_method("donde_se_ve") else ""
+		_ok(txt.contains("ARSENAL") and txt.contains("1-4"), "#66: el premio %s dice que se verá en el Arsenal del 1-4" % p.nombre)
+		var cuerpo := UI.partir(p.get("detalle", p.get("desc", "")), 480.0)
+		var donde := UI.partir(txt, 480.0)
+		var ancho := 0.0
+		for lin in donde:
+			ancho = maxf(ancho, UI.ancho(lin))
+		_ok(ancho <= 480.0 and 240.0 + cuerpo.size() * 14 + 8 + donde.size() * 14 <= 326.0, "#66: el aviso de %s cabe sobre el \"continuar\"" % p.nombre)
+		pr.free()
+		revisados += 1
+	_ok(revisados > 0, "#66: la derrota del 1-3 dio premios que solo se ven en el Arsenal")
+	# con el Arsenal abierto, o si no viene de un desafío, no se dice nada
+	if not nuevas.is_empty():
+		var pr = PR.new()
+		pr.premio = nuevas[0]
+		Partida.desbloquear("tablon")
+		_ok(pr.has_method("donde_se_ve") and pr.donde_se_ve() == "", "#66: con el Arsenal abierto no hace falta el aviso")
+		pr.free()
+	var pn = PR.new()
+	pn.premio = Datos.NIVELES["1-5"].premio.duplicate()
+	Partida.d.desbloqueos.erase("tablon")
+	_ok(pn.has_method("donde_se_ve") and pn.donde_se_ve() == "", "#66: un premio de nivel no lleva el aviso del Arsenal")
+	pn.free()
+	Partida.nuevo()
 
 
 ## #64: al elegir una carta con otra subida en cola salen cartas nuevas al tiro. El título lo dice
